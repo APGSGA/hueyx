@@ -1,3 +1,5 @@
 setuptools
 huey
 redis
+wheel
+twine

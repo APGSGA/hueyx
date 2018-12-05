@@ -9,21 +9,22 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='hueyx',
-    version='0.1',
+    version='0.1.0',
     packages=find_packages(),
     include_package_data=True,
-    license='BSD License',  # example license
-    description='Django huey consumer which supports multiple huey queues.',
+    license='MIT License',  # example license
+    description='Django huey extension which supports multiple huey queues.',
     long_description=README,
-    url='https://www.aymo.ch',
+    long_description_content_type="text/markdown",
+    url='https://github.com/Sebubu/hueyx',
     author='Severin Bühler',
     author_email='severin.buehler@apgsga.ch',
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',
-        'Framework :: Django :: X.Y',  # replace "X.Y" as appropriate
+        'Framework :: Django :: 2.1',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',  # example license
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.5',
