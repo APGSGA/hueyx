@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/hueyx.svg)](https://badge.fury.io/py/hueyx)
 
 A django extension to run huey with multiple queues.
-Multiple queue allow tasks not to block each other and to scale tasks independently.
+Multiple queues allow tasks not to block each other and to scale independently.
 Only the redis storage is supported by hueyx.
 
 ### Usage
@@ -31,7 +31,7 @@ INSTALLED_APPS = [
 
 ##### settings.py
 
-Compared to djhuey, hueyx allows several queue's to be defined in the settings.py. 
+Compared to djhuey, hueyx allows several queues to be defined in the settings.py. 
 
 ```python
 HUEYX = {
