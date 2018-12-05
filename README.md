@@ -77,6 +77,10 @@ HUEY_Q2 = hueyx('queue_name2')
 def my_task1():
     print('my_task1 called')
     
+@HUEY_Q1.db_task()
+def my_db_task1():
+    print('my_db_task1 called')
+    
 @HUEY_Q2.task()
 def my_task2():
     print('my_task2 called')
@@ -89,10 +93,11 @@ def my_periodic_task2():
 
 ##### Push task to queue
 ```python
-from example.tasks import my_task1, my_task2
+from example.tasks import my_task1, my_db_task1, my_task2
 
 
 my_task1()  # Task for queue_name1
+my_db_task1()  # Task for queue_name1
 my_task2()  # Task for queue_name2
 ```
 

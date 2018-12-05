@@ -1,4 +1,4 @@
-from huey import RedisHuey
+from .redis_huey import RedisHuey
 from functools import lru_cache
 
 from .settings_reader import DjangoSettingsReader

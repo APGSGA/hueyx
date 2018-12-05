@@ -1,8 +1,8 @@
-from typing import Dict, List
+from typing import Dict
 
 from django.conf import settings
 from redis import ConnectionPool
-from huey import RedisHuey
+from .redis_huey import RedisHuey
 
 
 class SingleConfigReader:
