@@ -38,7 +38,9 @@ class SingleConfigReader:
 
     @property
     def huey_instance(self):
-        return RedisHuey(self.name, **self.huey_options, connection_pool=self.connection_pool)
+        huey = RedisHuey(self.name, **self.huey_options, connection_pool=self.connection_pool)
+
+        return huey
 
 
 class DjangoSettingsReader:

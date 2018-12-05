@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from huey.consumer import Consumer
 from huey.consumer_options import ConsumerConfig
 
-from hueyx.consumers import settings_reader
+from hueyx.queues import settings_reader
 
 
 logger = logging.getLogger(__name__)

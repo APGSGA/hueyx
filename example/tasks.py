@@ -1,4 +1,4 @@
-from hueyx.consumers import hueyx
+from hueyx.queues import hueyx
 
 HUEY_Q1 = hueyx('queue1')
 HUEY_Q2 = hueyx('queue2')

@@ -63,7 +63,7 @@ except that you can only configure redis as storage engine.
 ##### tasks.py
 
 ```python
-from hueyx.consumers import hueyx
+from hueyx.queues import hueyx
 
 """
 Define which queue you want to use.
