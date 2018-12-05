@@ -62,6 +62,7 @@ from hueyx.consumers import hueyx
 
 """
 Define which queue you want to use.
+They are predefined in settings.py.
 """
 HUEY_Q1 = hueyx('queue_name1')
 HUEY_Q2 = hueyx('queue_name2')
