@@ -3,7 +3,7 @@ from typing import Dict, List
 from django.test import TestCase
 from redis import ConnectionPool
 
-from worker.settings_reader import SingleConfigReader
+from hueyx.settings_reader import SingleConfigReader
 
 
 class SingleConfigReaderTest(TestCase):

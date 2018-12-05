@@ -125,7 +125,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-HUEY = {
+HUEYX = {
     'queue1': {
         'connection': {
             'host': 'localhost',

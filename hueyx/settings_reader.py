@@ -46,10 +46,10 @@ class DjangoSettingsReader:
         self.configurations: Dict[str, SingleConfigReader] = {}
 
     def interpret_settings(self):
-        if not hasattr(settings, 'HUEY'):
+        if not hasattr(settings, 'HUEYX'):
             return
 
-        for name, values in settings.HUEY.items():
+        for name, values in settings.HUEYX.items():
             reader = SingleConfigReader(name, values)
             self.configurations[name] = reader
 

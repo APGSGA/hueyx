@@ -34,7 +34,7 @@ INSTALLED_APPS = [
 Compared to djhuey, hueyx allows several queue's to be defined in the settings.py. 
 
 ```python
-HUEY = {
+HUEYX = {
     'queue_name1': {
         'result_store': True,
         'store_none': False,

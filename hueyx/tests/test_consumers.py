@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 
-HUEY = {
+HUEYX = {
     'queue1': {
         'connection': {
             'host': 'localhost',
@@ -29,14 +29,14 @@ HUEY = {
 
 class ConsumerTest(TestCase):
     def test_settings_interpretation(self):
-        with self.settings(HUEY=HUEY):
+        with self.settings(HUEYX=HUEYX):
             from hueyx.consumers import hueyx
 
             self.assertIsNotNone(hueyx('queue1'))
             self.assertIsNotNone(hueyx('queue2'))
 
     def test_huey_instance_caching(self):
-        with self.settings(HUEY=HUEY):
+        with self.settings(HUEYX=HUEYX):
             from hueyx.consumers import hueyx
 
             self.assertEqual(hueyx('queue1'), hueyx('queue1'))
