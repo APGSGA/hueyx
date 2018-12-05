@@ -25,9 +25,12 @@ INSTALLED_APPS = [
 ]
 ```
 
-Compared to djhuey, hueyx allows several queue's to be defined in the settings.py. 
+
 
 ##### settings.py
+
+Compared to djhuey, hueyx allows several queue's to be defined in the settings.py. 
+
 ```python
 HUEY = {
     'queue_name1': {
