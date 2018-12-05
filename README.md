@@ -1,5 +1,7 @@
 # hueyx
 
+[![PyPI version](https://badge.fury.io/py/hueyx.svg)](https://badge.fury.io/py/hueyx)
+
 A django extension to run huey with multiple queues.
 Multiple queue allow tasks not to block each other and to scale tasks independently.
 Only the redis storage is supported by hueyx.
@@ -101,6 +103,6 @@ Consumers are started with the queue_name.
 ```
 
 
-### Collaborator
+### Collaborators
 
 - [Update hueyx on PyPi](./update_version.md)
