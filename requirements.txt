@@ -3,3 +3,4 @@ huey
 redis
 wheel
 twine
+cached-property

@@ -1,8 +1,13 @@
 from typing import Dict
 
+from cached_property import cached_property
 from django.conf import settings
 from redis import ConnectionPool
 from .redis_huey import RedisHuey
+
+
+class HueyxException(Exception):
+    pass
 
 
 class SingleConfigReader:
@@ -12,15 +17,16 @@ class SingleConfigReader:
 
     @property
     def consumer_options(self):
-        if 'consumer' in self.config:
-            return self.config['consumer']
+        if 'consumer' not in self.config:
+            raise HueyxException('No consumer configured.')
+        return self.config['consumer']
 
-        return {}
 
-    @property
+
+    @cached_property
     def connection_pool(self) -> ConnectionPool:
         if 'connection' not in self.config:
-            return None
+            raise HueyxException('No connection configured.')
 
         connection = self.config['connection']
         if 'connection_pool' in connection:
@@ -36,9 +42,9 @@ class SingleConfigReader:
         config.pop('backend_class', {})
         return config
 
-    @property
+    @cached_property
     def huey_instance(self):
-        huey = RedisHuey(self.name, **self.huey_options, connection_pool=self.connection_pool)
+        huey = RedisHuey(self.name, **self.huey_options, global_registry=False, connection_pool=self.connection_pool)
 
         return huey
 
@@ -49,7 +55,7 @@ class DjangoSettingsReader:
 
     def interpret_settings(self):
         if not hasattr(settings, 'HUEYX'):
-            return
+            raise HueyxException('No HUEYX config found in settings.py')
 
         for name, values in settings.HUEYX.items():
             reader = SingleConfigReader(name, values)
