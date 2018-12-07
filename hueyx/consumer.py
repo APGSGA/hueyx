@@ -12,11 +12,11 @@ class HueyxScheduler(Scheduler):
             timestamp=self.get_timestamp())
         self._logger.debug('Checking periodic tasks')
         for task in self.huey.read_periodic(now):
-                if self._check_and_set_for_multiple_execution(task, now):
+                if self.check_and_set_for_multiple_execution(task, now):
                     self.enqueue_periodic_task(task)
         return True
 
-    def _check_and_set_for_multiple_execution(self, task, now):
+    def check_and_set_for_multiple_execution(self, task, now):
         """
         Checks if the task already has been scheduled from another huey worker and if not, marks the task as scheduled.
         :param task:
@@ -28,9 +28,15 @@ class HueyxScheduler(Scheduler):
         lock_name = full_name + ".periodic_lock"
         with redis_lock.Lock(conn, lock_name, expire=60):
             if not self._can_execute(full_name, now):
+                self._logger.debug(
+                    '{full_name}: Do not schedule periodic task because this time pattern has already been scheduled.'
+                )
                 return False
             else:
                 self._set_execution_time_pattern(full_name, now)
+                self._logger.debug(
+                    f'{full_name}: Set time pattern for periodic task execution.'
+                )
                 return True
 
     def enqueue_periodic_task(self, task):
