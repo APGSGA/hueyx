@@ -54,8 +54,8 @@ HUEYX = {
         },
         'consumer': {
             'multiple_scheduler_locking': True,
-            'workers': 1,
-            'worker_type': 'process',
+            'workers': 2,
+            'worker_type': 'thread',
         }
     },
 }
@@ -64,6 +64,7 @@ HUEYX = {
 The settings are almost the same as in [djhuey](https://huey.readthedocs.io/en/latest/contrib.html#setting-things-up)
 Exceptions:
 - You can only configure redis as storage engine.
+- The `name` and `backend_class` parameters is not allowed.
 - The option `multiple_scheduler_locking` has been added. See below.
 
 
