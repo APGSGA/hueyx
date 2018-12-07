@@ -10,8 +10,7 @@ from hueyx.consumer import HueyxConsumer
 from hueyx.queues import settings_reader
 
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger('huey.consumer')
 
 
 class Command(BaseCommand):
@@ -51,6 +50,7 @@ class Command(BaseCommand):
         config.validate()
         config.setup_logger()
 
+        logger.info(f'Run huey on {queue_name}')
         consumer = HueyxConsumer(HUEY, multiple_scheduler_locking=multiple_scheduler_locking, **config.values)
         consumer.run()
 
@@ -64,6 +64,5 @@ class Command(BaseCommand):
         queue_name = options['queue_name'][0]
         self.autodiscover()
 
-        print('Run huey on', queue_name)
         self.run_consumer(queue_name)
 
