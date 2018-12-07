@@ -6,10 +6,12 @@ from django.core.management.base import BaseCommand
 from huey.consumer import Consumer
 from huey.consumer_options import ConsumerConfig
 
+from hueyx.consumer import HueyxConsumer
 from hueyx.queues import settings_reader
 
 
 logger = logging.getLogger(__name__)
+
 
 
 class Command(BaseCommand):
@@ -47,7 +49,7 @@ class Command(BaseCommand):
         config.validate()
         config.setup_logger()
 
-        consumer = Consumer(HUEY, **config.values)
+        consumer = HueyxConsumer(HUEY, **config.values)
         consumer.run()
 
 

@@ -21,8 +21,6 @@ class SingleConfigReader:
             raise HueyxException('No consumer configured.')
         return self.config['consumer']
 
-
-
     @cached_property
     def connection_pool(self) -> ConnectionPool:
         if 'connection' not in self.config:

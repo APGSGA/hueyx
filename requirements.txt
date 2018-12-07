@@ -1,6 +1,8 @@
 setuptools
-huey
-redis
 wheel
 twine
+
+huey
+redis
 cached-property
+python-redis-lock
