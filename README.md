@@ -44,7 +44,6 @@ HUEYX = {
         'consumer': {
             'workers': 1,
             'worker_type': 'thread',
-            'multiple_scheduler_locking': True,
         }
     },
     'queue_name2': {
