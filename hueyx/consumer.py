@@ -6,6 +6,15 @@ import redis
 
 
 class HueyxScheduler(Scheduler):
+    def __init__(self, *args, **kwargs):
+        self.multiple_scheduler_locking = kwargs.pop('multiple_scheduler_locking', False)
+        super().__init__(*args, **kwargs)
+
+    """
+    Extend the usual Scheduler with the ability to prevent multiple periodic task execution due to multiple
+    huey worker and finally multiple running Schedulers.
+    This is done by locking the specific execution time pattern on redis.
+    """
     def enqueue_periodic_tasks(self, now, start):
         self.huey.emit_status(
             EVENT_CHECKING_PERIODIC,
@@ -23,18 +32,23 @@ class HueyxScheduler(Scheduler):
         :param now:
         :return: Bool if task can be scheduled.
         """
+
+        if not self.multiple_scheduler_locking:
+            return True
+
         conn: redis.ConnectionPool = self.huey.storage.conn
         full_name = f"huey.{self.huey.name}.{task.name}"
         lock_name = full_name + ".periodic_lock"
+        pattern_name = full_name + '.time_pattern'
         with redis_lock.Lock(conn, lock_name, expire=60):
-            if not self._can_execute(full_name, now):
-                self._logger.debug(
+            if not self._can_execute(pattern_name, now):
+                self._logger.info(
                     '{full_name}: Do not schedule periodic task because this time pattern has already been scheduled.'
                 )
                 return False
             else:
-                self._set_execution_time_pattern(full_name, now)
-                self._logger.debug(
+                self._set_execution_time_pattern(pattern_name, now)
+                self._logger.info(
                     f'{full_name}: Set time pattern for periodic task execution.'
                 )
                 return True
@@ -74,9 +88,15 @@ class HueyxScheduler(Scheduler):
 
 
 class HueyxConsumer(Consumer):
+    def __init__(self, *args, **kwargs):
+        self.multiple_scheduler_locking = kwargs.pop('multiple_scheduler_locking', False)
+        super().__init__(*args, **kwargs)
+
     def _create_scheduler(self):
+        self._logger.info('multiple_scheduler_locking: ' + str(self.multiple_scheduler_locking))
         return HueyxScheduler(
             huey=self.huey,
             interval=self.scheduler_interval,
             utc=self.utc,
-            periodic=self.periodic)
+            periodic=self.periodic,
+            multiple_scheduler_locking=self.multiple_scheduler_locking)

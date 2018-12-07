@@ -44,14 +44,21 @@ class Command(BaseCommand):
 
     def run_consumer(self, queue_name):
         consumer_options = settings_reader.configurations[queue_name].consumer_options
+        multiple_scheduler_locking = self.get_multiple_scheduler_locking_param(consumer_options)
+
         HUEY = settings_reader.configurations[queue_name].huey_instance
         config = ConsumerConfig(**consumer_options)
         config.validate()
         config.setup_logger()
 
-        consumer = HueyxConsumer(HUEY, **config.values)
+        consumer = HueyxConsumer(HUEY, multiple_scheduler_locking=multiple_scheduler_locking, **config.values)
         consumer.run()
 
+    def get_multiple_scheduler_locking_param(self, consumer_options) -> bool:
+        if 'multiple_scheduler_locking' not in consumer_options:
+            return False
+        else:
+            return consumer_options['multiple_scheduler_locking']
 
     def handle(self, *args, **options):
         queue_name = options['queue_name'][0]

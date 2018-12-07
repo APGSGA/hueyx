@@ -144,6 +144,7 @@ HUEYX = {
             'db': 1
         },
         'consumer': {
+            'multiple_scheduler_locking': True,
             'workers': 4,
             'worker_type': 'process',
         }

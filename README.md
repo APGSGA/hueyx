@@ -56,8 +56,10 @@ HUEYX = {
 }
 ```
 
-The settings are the same as in [djhuey](https://huey.readthedocs.io/en/latest/contrib.html#setting-things-up)
-except that you can only configure redis as storage engine.
+The settings are almost the same as in [djhuey](https://huey.readthedocs.io/en/latest/contrib.html#setting-things-up)
+Exceptions:
+- You can only configure redis as storage engine.
+- The option `multiple_scheduler_locking` has been added. See below.
 
 
 ##### tasks.py
@@ -107,6 +109,26 @@ Consumers are started with the queue_name.
 ./manage.py run_hueyx queue_name1
 ```
 
+### Additional settings
+`multiple_scheduler_locking` has been added to support multiple huey schedulers.
+If you run huey in a cloud environment, you will end up running multiple huey instances which each will
+schedule the periodic task.
+`multiple_scheduler_locking` prevents periodic tasks to be scheduled multiple times.
+
+```python
+HUEYX = {
+    'queue_name2': {
+        'connection': {
+            'connection_pool': ConnectionPool(host='localhost', port=6379, db=1)
+        },
+            'consumer': {
+                'multiple_scheduler_locking': True,
+                'workers': 1,
+                'worker_type': 'process',
+        }
+    },
+}
+```
 
 ### Collaborators
 
