@@ -81,7 +81,7 @@ HUEYX = {
 }
 ```
 
-The settings are almost the same as in [djhuey](https://huey.readthedocs.io/en/latest/contrib.html#setting-things-up)
+The settings are almost the same as in [djhuey](https://huey.readthedocs.io/en/latest/contrib.html#setting-things-up).
 
 Exceptions:
 - You can only configure redis as storage engine.
