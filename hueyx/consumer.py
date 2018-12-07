@@ -43,7 +43,7 @@ class HueyxScheduler(Scheduler):
         with redis_lock.Lock(conn, lock_name, expire=60):
             if not self._can_execute(pattern_name, now):
                 self._logger.info(
-                    '{full_name}: Do not schedule periodic task because this time pattern has already been scheduled.'
+                    f'{full_name}: Do not schedule periodic task because this time pattern has already been scheduled.'
                 )
                 return False
             else:
