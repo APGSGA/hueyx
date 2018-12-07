@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/hueyx.svg)](https://badge.fury.io/py/hueyx)
 
 A django extension to run huey with multiple queues.
-Multiple queues allow tasks not to block each other and to scale independently.
+Multiple queues allow tasks to not block each other and to scale independently.
 Only the redis storage is supported.
 
 ### Usage
@@ -38,19 +38,24 @@ HUEYX = {
     'queue_name1': {
         'result_store': True,
         'store_none': False,
-        'connection': {'host': 'localhost', 'port': 6379, db: 5},
-            'consumer': {
-                'workers': 4,
-                'worker_type': 'process',
+        'connection': {
+            'host': 'localhost', 
+            'port': 6379, 
+            'db': 5
+        },
+        'consumer': {
+            'workers': 4,
+            'worker_type': 'process',
         }
     },
     'queue_name2': {
         'connection': {
             'connection_pool': ConnectionPool(host='localhost', port=6379, db=1)
         },
-            'consumer': {
-                'workers': 1,
-                'worker_type': 'process',
+        'consumer': {
+            'multiple_scheduler_locking': True,
+            'workers': 1,
+            'worker_type': 'process',
         }
     },
 }
@@ -115,20 +120,6 @@ If you run huey in a cloud environment, you will end up running multiple huey in
 schedule the periodic task.
 `multiple_scheduler_locking` prevents periodic tasks to be scheduled multiple times.
 
-```python
-HUEYX = {
-    'queue_name2': {
-        'connection': {
-            'connection_pool': ConnectionPool(host='localhost', port=6379, db=1)
-        },
-            'consumer': {
-                'multiple_scheduler_locking': True,
-                'workers': 1,
-                'worker_type': 'process',
-        }
-    },
-}
-```
 
 ### Collaborators
 
