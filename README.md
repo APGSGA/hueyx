@@ -44,7 +44,7 @@ HUEYX = {
         'consumer': {
             'workers': 1,
             'worker_type': 'thread',
-            'multiple_scheduler_locking': True,  # Prevent multiple periodic tasks by multiple schedulers.
+            'multiple_scheduler_locking': True,
         }
     },
     'queue_name2': {
@@ -123,7 +123,7 @@ Consumers are started with the queue_name.
 `multiple_scheduler_locking` has been added to support multiple huey schedulers.
 If you run huey in a cloud environment, you will end up running multiple huey instances which each will
 schedule the periodic task.
-`multiple_scheduler_locking` prevents periodic tasks to be scheduled multiple times.
+`multiple_scheduler_locking` prevents periodic tasks to be scheduled multiple times. It is false by default.
 
 
 ### Collaborators
