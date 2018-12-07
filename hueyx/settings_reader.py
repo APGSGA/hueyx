@@ -38,6 +38,7 @@ class SingleConfigReader:
         config.pop('connection', {})
         config.pop('consumer', {})
         config.pop('backend_class', {})
+        config.pop('name', {})
         return config
 
     @cached_property
