@@ -3,7 +3,6 @@ import logging
 
 from django.apps import apps as django_apps
 from django.core.management.base import BaseCommand
-from huey.consumer import Consumer
 from huey.consumer_options import ConsumerConfig
 
 from hueyx.consumer import HueyxConsumer
@@ -43,9 +42,13 @@ class Command(BaseCommand):
 
     def run_consumer(self, queue_name):
         consumer_options = settings_reader.configurations[queue_name].consumer_options
-        multiple_scheduler_locking = self.get_multiple_scheduler_locking_param(consumer_options)
+
+        multiple_scheduler_locking = consumer_options.pop('multiple_scheduler_locking', False)
+        fire_enqueued_event = consumer_options.pop('fire_enqueued_event', False)
 
         HUEY = settings_reader.configurations[queue_name].huey_instance
+        HUEY._fire_enqueued_event = fire_enqueued_event
+
         config = ConsumerConfig(**consumer_options)
         config.validate()
         config.setup_logger()
@@ -53,12 +56,6 @@ class Command(BaseCommand):
         logger.info(f'Run huey on {queue_name}')
         consumer = HueyxConsumer(HUEY, multiple_scheduler_locking=multiple_scheduler_locking, **config.values)
         consumer.run()
-
-    def get_multiple_scheduler_locking_param(self, consumer_options) -> bool:
-        if 'multiple_scheduler_locking' not in consumer_options:
-            return False
-        else:
-            return consumer_options['multiple_scheduler_locking']
 
     def handle(self, *args, **options):
         queue_name = options['queue_name'][0]

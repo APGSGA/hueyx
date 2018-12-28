@@ -3,7 +3,11 @@ from django.db import close_old_connections
 from huey import RedisHuey as RedisHueyOriginal
 
 
+EVENT_ENQUEUED = 'enqueued'
+
+
 class RedisHuey(RedisHueyOriginal):
+    _fire_enqueued_event = False
     """
     Extends the RedisHuey with new decorators which start a new transaction for every task.
     """
@@ -18,6 +22,16 @@ class RedisHuey(RedisHueyOriginal):
         def decorator(fn):
             return self.periodic_task(*args, **kwargs)(close_db(fn, self))
         return decorator
+
+    def enqueue(self, task):
+        """
+        Send an additional event when a task is enqueued. This is done for prometheus.
+        :param task:
+        :return:
+        """
+        super(RedisHuey, self).enqueue(task)
+        if not self.always_eager and self._fire_enqueued_event:
+            self.emit_task(EVENT_ENQUEUED, task)
 
 
 def close_db(fn, huey: RedisHuey):
