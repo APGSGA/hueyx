@@ -1,8 +1,8 @@
 import datetime
 
-from huey.consumer import Consumer, Scheduler, EVENT_CHECKING_PERIODIC, EVENT_SCHEDULING_PERIODIC
-import redis_lock
 import redis
+import redis_lock
+from huey.consumer import Consumer, Scheduler, EVENT_CHECKING_PERIODIC, EVENT_SCHEDULING_PERIODIC
 
 
 class HueyxScheduler(Scheduler):
@@ -15,14 +15,16 @@ class HueyxScheduler(Scheduler):
     huey worker and finally multiple running Schedulers.
     This is done by locking the specific execution time pattern on redis.
     """
+
     def enqueue_periodic_tasks(self, now, start):
         self.huey.emit_status(
             EVENT_CHECKING_PERIODIC,
             timestamp=self.get_timestamp())
         self._logger.debug('Checking periodic tasks')
         for task in self.huey.read_periodic(now):
-                if self.check_and_set_for_multiple_execution(task, now):
-                    self.enqueue_periodic_task(task)
+            if self.check_and_set_for_multiple_execution(task, now):
+                self.enqueue_periodic_task(task)
+        self.restart_dead_tasks()
         return True
 
     def check_and_set_for_multiple_execution(self, task, now):
@@ -85,6 +87,17 @@ class HueyxScheduler(Scheduler):
         current_time_pattern = self._create_time_pattern(now)
         conn: redis.Redis = self.huey.storage.conn
         conn.set(full_name, current_time_pattern)
+
+    def restart_dead_tasks(self):
+        self._logger.debug('Restart dead tasks')
+        for task in self.huey.get_dead_tasks():
+            for task_type in self.huey.restartable_tasks:   # TODO: exception if not found
+                if task_type.task_class.__name__ in task.name:
+                    self.huey.revoke_by_id(task.id)
+                    self.huey.get(self.huey.get_heartbeat_observation_key(task.id))
+                    self._logger.debug(f'Restart {task_type.task_class.__name__}({str(task.args), str(task.kwargs)})')
+                    task_type(*task.args, **task.kwargs)
+                    break
 
 
 class HueyxConsumer(Consumer):
