@@ -44,10 +44,8 @@ class Command(BaseCommand):
         consumer_options = settings_reader.configurations[queue_name].consumer_options
 
         multiple_scheduler_locking = consumer_options.pop('multiple_scheduler_locking', False)
-        fire_enqueued_event = consumer_options.pop('fire_enqueued_event', False)
 
         HUEY = settings_reader.configurations[queue_name].huey_instance
-        HUEY._fire_enqueued_event = fire_enqueued_event
 
         config = ConsumerConfig(**consumer_options)
         config.validate()

@@ -7,7 +7,10 @@ EVENT_ENQUEUED = 'enqueued'
 
 
 class RedisHuey(RedisHueyOriginal):
-    _fire_enqueued_event = False
+    def __init__(self, *args, **kwargs):
+        self._fire_enqueued_event = kwargs.pop('fire_enqueued_events', False)
+        super().__init__(*args, **kwargs)
+
     """
     Extends the RedisHuey with new decorators which start a new transaction for every task.
     """

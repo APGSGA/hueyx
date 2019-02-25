@@ -47,12 +47,12 @@ HUEYX = {
         }
     },
     'queue_name2': {
+        'fire_enqueued_events': True,
         'connection': {
             'connection_pool': ConnectionPool(host='localhost', port=6379, db=1)
         },
         'consumer': {
             'multiple_scheduler_locking': True,
-            'fire_enqueued_event': True,
             'workers': 2,
             'worker_type': 'thread',
         }
@@ -126,8 +126,8 @@ schedule the periodic task.
 `multiple_scheduler_locking` prevents periodic tasks to be scheduled multiple times. It is false by default.
 
 
-##### fire_enqueued_event
-`fire_enqueued_event` has been added to better support the [huey-exporter](https://github.com/APGSGA/huey-exporter).
+##### fire_enqueued_events
+`fire_enqueued_events` has been added to better support the [huey-exporter](https://github.com/APGSGA/huey-exporter).
 Additionally to the [default huey events](https://huey.readthedocs.io/en/latest/events.html), hueyx
 emits `EVENT_ENQUEUED` when a task has been enqueued. This allows to calculate the 
 queue length on Prometheus.

@@ -138,10 +138,11 @@ HUEYX = {
         }
     },
     'queue2': {
+        'fire_enqueued_event': True,
         'connection': {
             'host': 'localhost',
             'port': 6379,
-            'db': 1
+            'db': 0
         },
         'consumer': {
             'multiple_scheduler_locking': True,
