@@ -52,7 +52,7 @@ class RedisHuey(RedisHueyOriginal):
         if not self.always_eager and self._fire_enqueued_event:
             self.emit_task(EVENT_ENQUEUED, task)
 
-    DeadTask = namedtuple('DeadTask', ['id', 'name', 'args', 'kwargs'])
+    DeadTask = namedtuple('DeadTask', ['id', 'name', 'settings'])
     HEARTBEAT_UPDATE_INTERVAL = 60  # min wait time in seconds to send another heartbeat to redis
 
     @staticmethod
@@ -69,17 +69,11 @@ class RedisHuey(RedisHueyOriginal):
         for result in self.storage.conn.hscan_iter(self.storage.result_key, match=observation_key_prefix + '*'):
             key = result[0].decode()
             task_id = key[len(observation_key_prefix):]
-            task_name, timeout, args, kwargs = self.get(key, peek=True)
+            name, task_settings, timeout = self.get(key, peek=True)
             timestamp = self.get(self.get_heartbeat_timestamp_key(task_id))
             if not timestamp or timestamp + timedelta(seconds=timeout) <= timezone.now():
-                dead_tasks.append(self.DeadTask(task_id, task_name, args, kwargs))
+                dead_tasks.append(self.DeadTask(task_id, name, task_settings))
         return dead_tasks
-
-    restartable_tasks = set()
-
-    def register_for_restart(self, task_wrapper: TaskWrapper):
-        if task_wrapper.task_class.__name__ not in [tw.task_class.__name__ for tw in self.restartable_tasks]:
-            self.restartable_tasks.add(task_wrapper)
 
 
 def close_db(fn, huey: RedisHuey):
@@ -101,7 +95,7 @@ def _wrap_heartbeat(fn, huey: RedisHuey, timeout: int, kwargs):
     @wraps(fn)
     def inner(*args, **kwargs):
         task: QueueTask = kwargs.pop('task')
-        heartbeat = Heartbeat(huey, task, timeout, args, kwargs)
+        heartbeat = Heartbeat(huey, task, timeout)
         heartbeat._start_heartbeat_observation()
         heartbeat._set_timestamp()
         try:
@@ -117,12 +111,10 @@ def _wrap_heartbeat(fn, huey: RedisHuey, timeout: int, kwargs):
 
 class Heartbeat:
 
-    def __init__(self, huey: RedisHuey, task: QueueTask, timeout: int, args, kwargs):
+    def __init__(self, huey: RedisHuey, task: QueueTask, timeout: int):
         self._huey = huey
         self.task = task
         self.timeout = timeout
-        self.args = args
-        self.kwargs = kwargs
 
     @contextmanager
     def long_running_operation(self, delta: timedelta):
@@ -146,8 +138,12 @@ class Heartbeat:
         return True
 
     def _start_heartbeat_observation(self):
+        data = self.task.get_data()
+        data[1].pop('task')
+        task_settings = dict(execute_time=self.task.execute_time, on_complete=self.task.on_complete,
+                    retries=self.task.retries, retry_delay=self.task.retry_delay, data=data)
         self._huey.put(self._huey.get_heartbeat_observation_key(self.task.task_id),
-                       (self.task.name, self.timeout, self.args, self.kwargs))
+                       (self.task.name, task_settings, self.timeout))
 
     def _stop_heartbeat_observation(self):
         self._huey.get(self._huey.get_heartbeat_observation_key(self.task.task_id))

@@ -91,13 +91,12 @@ class HueyxScheduler(Scheduler):
     def restart_dead_tasks(self):
         self._logger.debug('Restart dead tasks')
         for task in self.huey.get_dead_tasks():
-            for task_type in self.huey.restartable_tasks:   # TODO: exception if not found
-                if task_type.task_class.__name__ in task.name:
-                    self.huey.revoke_by_id(task.id)
-                    self.huey.get(self.huey.get_heartbeat_observation_key(task.id))
-                    self._logger.debug(f'Restart {task_type.task_class.__name__}({str(task.args), str(task.kwargs)})')
-                    task_type(*task.args, **task.kwargs)
-                    break
+            task_type = self.huey.registry.get_task_class(task.name)
+            self.huey.revoke_by_id(task.id)
+            self.huey.get(self.huey.get_heartbeat_observation_key(task.id))
+            task = task_type(**task.settings)
+            self._logger.debug(f'Restart {task.name}')
+            self.huey.enqueue(task)
 
 
 class HueyxConsumer(Consumer):
