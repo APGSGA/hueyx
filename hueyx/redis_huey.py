@@ -7,7 +7,7 @@ from typing import List
 from django.db import close_old_connections
 from django.utils import timezone
 from huey import RedisHuey as RedisHueyOriginal
-from huey.api import QueueTask, TaskWrapper
+from huey.api import QueueTask
 
 EVENT_ENQUEUED = 'enqueued'
 
@@ -23,9 +23,9 @@ class RedisHuey(RedisHueyOriginal):
 
     def db_task(self, *args, **kwargs):
         def decorator(fn):
-            timeout = kwargs.pop('timeout', 0)
-            if timeout:
-                wrap = _wrap_heartbeat(close_db(fn, self), self, timeout, kwargs)
+            heartbeat_timeout = kwargs.pop('heartbeat_timeout', 0)
+            if heartbeat_timeout:
+                wrap = _wrap_heartbeat(close_db(fn, self), self, heartbeat_timeout, kwargs)
                 kwargs['include_task'] = True
             else:
                 wrap = close_db(fn, self)
@@ -69,9 +69,9 @@ class RedisHuey(RedisHueyOriginal):
         for result in self.storage.conn.hscan_iter(self.storage.result_key, match=observation_key_prefix + '*'):
             key = result[0].decode()
             task_id = key[len(observation_key_prefix):]
-            name, task_settings, timeout = self.get(key, peek=True)
+            name, task_settings, heartbeat_timeout = self.get(key, peek=True)
             timestamp = self.get(self.get_heartbeat_timestamp_key(task_id))
-            if not timestamp or timestamp + timedelta(seconds=timeout) <= timezone.now():
+            if not timestamp or timestamp + timedelta(seconds=heartbeat_timeout) <= timezone.now():
                 dead_tasks.append(self.DeadTask(task_id, name, task_settings))
         return dead_tasks
 
@@ -90,12 +90,12 @@ def close_db(fn, huey: RedisHuey):
     return inner
 
 
-def _wrap_heartbeat(fn, huey: RedisHuey, timeout: int, kwargs):
+def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int, kwargs):
     # noinspection PyProtectedMember
     @wraps(fn)
     def inner(*args, **kwargs):
         task: QueueTask = kwargs.pop('task')
-        heartbeat = Heartbeat(huey, task, timeout)
+        heartbeat = Heartbeat(huey, task, heartbeat_timeout)
         heartbeat._start_heartbeat_observation()
         heartbeat._set_timestamp()
         try:
@@ -104,17 +104,18 @@ def _wrap_heartbeat(fn, huey: RedisHuey, timeout: int, kwargs):
             heartbeat._stop_heartbeat_observation()
         return result
 
-    assert timeout >= 120, 'Minimal timeout is 120 seconds.'
-    assert not kwargs.get('include_task', False), 'include_task and timeout keywords are not allowed together.'
+    assert heartbeat_timeout >= 120, 'Minimal heartbeat_timeout is 120 seconds.'
+    assert not kwargs.get('include_task',
+                          False), 'include_task and heartbeat_timeout keywords are not allowed together.'
     return inner
 
 
 class Heartbeat:
 
-    def __init__(self, huey: RedisHuey, task: QueueTask, timeout: int):
+    def __init__(self, huey: RedisHuey, task: QueueTask, heartbeat_timeout: int):
         self._huey = huey
         self.task = task
-        self.timeout = timeout
+        self.heartbeat_timeout = heartbeat_timeout
 
     @contextmanager
     def long_running_operation(self, delta: timedelta):
@@ -132,7 +133,7 @@ class Heartbeat:
                 return
             now = timezone.now()
             if timestamp + timedelta(seconds=self._huey.HEARTBEAT_UPDATE_INTERVAL) <= now:
-                if timestamp + timedelta(seconds=self.timeout) <= now:
+                if timestamp + timedelta(seconds=self.heartbeat_timeout) <= now:
                     return False
                 self._set_timestamp()
         return True
@@ -141,9 +142,9 @@ class Heartbeat:
         data = self.task.get_data()
         data[1].pop('task')
         task_settings = dict(execute_time=self.task.execute_time, on_complete=self.task.on_complete,
-                    retries=self.task.retries, retry_delay=self.task.retry_delay, data=data)
+                             retries=self.task.retries, retry_delay=self.task.retry_delay, data=data)
         self._huey.put(self._huey.get_heartbeat_observation_key(self.task.task_id),
-                       (self.task.name, task_settings, self.timeout))
+                       (self.task.name, task_settings, self.heartbeat_timeout))
 
     def _stop_heartbeat_observation(self):
         self._huey.get(self._huey.get_heartbeat_observation_key(self.task.task_id))
