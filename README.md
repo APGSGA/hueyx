@@ -68,7 +68,7 @@ Exceptions:
 - You can only configure redis as storage engine.
 - The `name` and `backend_class` parameters are not supported.
 - The options `multiple_scheduler_locking` and `fire_enqueued_event` have been added. See below.
-
+- The parameter `heartbeat_timeout` for `db_task` has been added. See below.
 
 ##### tasks.py
 
@@ -99,6 +99,13 @@ def my_task2():
 def my_periodic_task2():
     print('my_periodic_task2 called')
     return 1
+    
+@HUEY_Q2.db_task(heartbeat_timeout=120)
+def my_heartbeat_task(heartbeat: Heartbeat):
+    with heartbeat.long_running_operation():
+        print('This operation can take a while -> don\'t check for heartbeats')
+    print('Now we check for heartbeats -> call heartbeat() periodically')
+    heartbeat()
 ```
 
 ##### Push task to queue
@@ -116,6 +123,12 @@ Consumers are started with the queue_name.
 ```bash
 ./manage.py run_hueyx queue_name1
 ```
+
+##### Heartbeat tasks
+Heartbeat tasks are tasks with the parameter `heartbeat_timeout`. It defines the timeout in seconds. 
+They get a Heartbeat object which needs to be called in order to send a heartbeat to redis. 
+If no heartbeat occurs in set timeout the task is presumed to be dead and will automatically get restarted. 
+`heartbeat_timeout` needs to be at least 120 seconds. It does not work together with the parameter `include_task`.
 
 ### Additional settings
 

@@ -25,7 +25,9 @@ class RedisHuey(RedisHueyOriginal):
         def decorator(fn):
             heartbeat_timeout = kwargs.pop('heartbeat_timeout', 0)
             if heartbeat_timeout:
-                wrap = _wrap_heartbeat(close_db(fn, self), self, heartbeat_timeout, kwargs)
+                assert not kwargs.get('include_task',
+                                      False), 'include_task and heartbeat_timeout keywords are not allowed together.'
+                wrap = _wrap_heartbeat(close_db(fn, self), self, heartbeat_timeout)
                 kwargs['include_task'] = True
             else:
                 wrap = close_db(fn, self)
@@ -90,7 +92,7 @@ def close_db(fn, huey: RedisHuey):
     return inner
 
 
-def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int, kwargs):
+def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int):
     # noinspection PyProtectedMember
     @wraps(fn)
     def inner(*args, **kwargs):
@@ -105,8 +107,6 @@ def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int, kwargs):
         return result
 
     assert heartbeat_timeout >= 120, 'Minimal heartbeat_timeout is 120 seconds.'
-    assert not kwargs.get('include_task',
-                          False), 'include_task and heartbeat_timeout keywords are not allowed together.'
     return inner
 
 
