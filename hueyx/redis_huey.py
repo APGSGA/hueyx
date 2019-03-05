@@ -130,7 +130,7 @@ class Heartbeat:
         else:
             timestamp = self._get_timestamp()
             if not timestamp:
-                return
+                return False
             now = timezone.now()
             if timestamp + timedelta(seconds=self._huey.HEARTBEAT_UPDATE_INTERVAL) <= now:
                 if timestamp + timedelta(seconds=self.heartbeat_timeout) <= now:
