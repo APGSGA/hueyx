@@ -72,7 +72,7 @@ class RedisHuey(RedisHueyOriginal):
             key = result[0].decode()
             task_id = key[len(observation_key_prefix):]
             name, task_settings, heartbeat_timeout = self.get(key, peek=True)
-            timestamp = self.get(self.get_heartbeat_timestamp_key(task_id))
+            timestamp = self.get(self.get_heartbeat_timestamp_key(task_id), peek=True)
             if not timestamp or timestamp + timedelta(seconds=heartbeat_timeout) <= timezone.now():
                 dead_tasks.append(self.DeadTask(task_id, name, task_settings))
         return dead_tasks
