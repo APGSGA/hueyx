@@ -128,10 +128,13 @@ class HeartbeatTimeoutError(Exception):
 
 class Heartbeat:
 
+    CHECK_INTERVAL = timedelta(seconds=5)   # check timestamp just every 5 seconds -> otherwise redis can get heady load
+
     def __init__(self, huey: RedisHuey, task: QueueTask, heartbeat_timeout: int):
         self._huey = huey
         self.task = task
         self.heartbeat_timeout = heartbeat_timeout
+        self.next_check = None
 
     @contextmanager
     def long_running_operation(self, delta: timedelta):
@@ -140,6 +143,16 @@ class Heartbeat:
         self._set_timestamp()
 
     def __call__(self):
+        if not self.next_check or self.next_check < timezone.now():
+            self._check_timestamp()
+            self.next_check = timezone.now() + self.CHECK_INTERVAL
+
+    def _check_timestamp(self):
+        """
+        - Check if task has not been revoked -> RevokedError
+        - Check if timestamp has not been expired -> HeartbeatTimeoutError
+        Set new timestamp if checks are true
+        """
         if self._huey.is_revoked(self.task):
             self._delete_timestamp()
             raise RevokedError()
@@ -154,6 +167,7 @@ class Heartbeat:
                 self._set_timestamp()
 
     def _start_heartbeat_observation(self):
+        """ Start heartbeat observation and save data to restart task if necessary. """
         data = self.task.get_data()
         if data:
             data[1].pop('task')

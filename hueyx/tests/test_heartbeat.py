@@ -12,7 +12,7 @@ from hueyx.redis_huey import RedisHuey, Heartbeat, HeartbeatTimeoutError, Revoke
 class RedisHueyMock(RedisHuey):
 
     def get_storage(self, *args, **kwargs):
-        return RedisMock()
+        return MagicMock()
 
     def is_revoked(self, task, dt=None, peek=True):
         return False
@@ -27,6 +27,7 @@ class HeartbeatTest(TestCase):
         self.heartbeat = Heartbeat(self.huey, self.task, self.timeout)
         self.redis: MagicMock = self.huey.storage
         self.called = False
+        self.call_cnt = 0
 
     def test_start_heartbeat_observation(self):
         self.heartbeat._start_heartbeat_observation()
@@ -125,6 +126,26 @@ class HeartbeatTest(TestCase):
             self.heartbeat()
         self.assertTrue(self.called)
 
+    def test_caching(self):
+        def get_timestamp():
+            self.call_cnt += 1
+            return timezone.now() - timedelta(seconds=self.huey.HEARTBEAT_UPDATE_INTERVAL)
+
+        self.heartbeat._get_timestamp = get_timestamp
+        self.heartbeat()
+        self.heartbeat()
+        self.assertEqual(self.call_cnt, 1)
+
+    def test_no_caching(self):
+        def get_timestamp():
+            self.call_cnt += 1
+            return timezone.now() - timedelta(seconds=self.huey.HEARTBEAT_UPDATE_INTERVAL)
+
+        self.heartbeat._get_timestamp = get_timestamp
+        self.heartbeat.CHECK_INTERVAL = timedelta()
+        self.heartbeat()
+        self.heartbeat()
+        self.assertEqual(self.call_cnt, 2)
 
 class HeartbeatMock(MagicMock):
 
@@ -138,6 +159,7 @@ class HeartbeatMock(MagicMock):
         self.calls.append('stop')
 
 
+@patch('hueyx.redis_huey.Heartbeat', new_callable=HeartbeatMock)
 class HeartbeatWrapperTest(TestCase):
     def setUp(self):
         self.huey = RedisHueyMock()
@@ -145,7 +167,6 @@ class HeartbeatWrapperTest(TestCase):
         self.timeout = 120
         self.heartbeat = None
 
-    @patch('hueyx.redis_huey.Heartbeat', new_callable=HeartbeatMock)
     def test_task_execution(self, *args):
         def task(heartbeat):
             self.heartbeat = heartbeat
@@ -155,7 +176,6 @@ class HeartbeatWrapperTest(TestCase):
         self.assertEqual(result, 'finish')
         self.assertEqual(self.heartbeat.calls, ['start', 'timestamp', 'stop'])
 
-    @patch('hueyx.redis_huey.Heartbeat', new_callable=HeartbeatMock)
     def test_timeout(self, *args):
         def task(heartbeat):
             self.heartbeat = heartbeat
@@ -165,7 +185,6 @@ class HeartbeatWrapperTest(TestCase):
         self.assertEqual(result, None)
         self.assertEqual(self.heartbeat.calls, ['start', 'timestamp'])
 
-    @patch('hueyx.redis_huey.Heartbeat', new_callable=HeartbeatMock)
     def test_revoke(self, *args):
         def task(heartbeat):
             self.heartbeat = heartbeat
@@ -175,7 +194,6 @@ class HeartbeatWrapperTest(TestCase):
         self.assertEqual(result, None)
         self.assertEqual(self.heartbeat.calls, ['start', 'timestamp', 'stop'])
 
-    @patch('hueyx.redis_huey.Heartbeat', new_callable=HeartbeatMock)
     def test_exception(self, *args):
         def task(heartbeat):
             self.heartbeat = heartbeat
@@ -192,6 +210,7 @@ class RedisMock(MagicMock):
     def conn(self, *args, **kwargs):
         return self
 
+    # noinspection PyMethodMayBeStatic
     def hscan_iter(self, *args, **kwargs):
         return [[b'hb:task-id']]
 
