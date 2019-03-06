@@ -100,14 +100,30 @@ def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int):
         heartbeat = Heartbeat(huey, task, heartbeat_timeout)
         heartbeat._start_heartbeat_observation()
         heartbeat._set_timestamp()
+        result = None
         try:
             result = fn(*args, heartbeat=heartbeat, **kwargs)
-        finally:
+        except HeartbeatTimeoutError:   # do not stop heartbeat observation -> task needs to be restarted
+            return
+        except RevokedError:    # stop heartbeat observation because task has been revoked
+            pass
+        except Exception as e:  # stop heartbeat observation and reraise exception
             heartbeat._stop_heartbeat_observation()
+            raise e
+
+        heartbeat._stop_heartbeat_observation()
         return result
 
     assert heartbeat_timeout >= 120, 'Minimal heartbeat_timeout is 120 seconds.'
     return inner
+
+
+class RevokedError(Exception):
+    pass
+
+
+class HeartbeatTimeoutError(Exception):
+    pass
 
 
 class Heartbeat:
@@ -126,21 +142,21 @@ class Heartbeat:
     def __call__(self):
         if self._huey.is_revoked(self.task):
             self._delete_timestamp()
-            return False
+            raise RevokedError()
         else:
             timestamp = self._get_timestamp()
             if not timestamp:
-                return False
+                raise HeartbeatTimeoutError()
             now = timezone.now()
             if timestamp + timedelta(seconds=self._huey.HEARTBEAT_UPDATE_INTERVAL) <= now:
                 if timestamp + timedelta(seconds=self.heartbeat_timeout) <= now:
-                    return False
+                    raise HeartbeatTimeoutError()
                 self._set_timestamp()
-        return True
 
     def _start_heartbeat_observation(self):
         data = self.task.get_data()
-        data[1].pop('task')
+        if data:
+            data[1].pop('task')
         task_settings = dict(execute_time=self.task.execute_time, on_complete=self.task.on_complete,
                              retries=self.task.retries, retry_delay=self.task.retry_delay, data=data)
         self._huey.put(self._huey.get_heartbeat_observation_key(self.task.task_id),
