@@ -1,5 +1,8 @@
 # Release notes
 
+### 0.1.2
+- Added `heartbeat_timeout` parameter for `db_task`
+
 ### 0.1.0
 
 - Added the `EVENT_ENQUEUED` event when a task has been enqueued.
