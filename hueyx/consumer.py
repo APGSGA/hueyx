@@ -2,7 +2,7 @@ import datetime
 
 import redis
 import redis_lock
-from huey.consumer import Consumer, Scheduler, EVENT_CHECKING_PERIODIC, EVENT_SCHEDULING_PERIODIC
+from huey.consumer import Consumer, Scheduler
 
 
 class HueyxScheduler(Scheduler):
@@ -17,9 +17,6 @@ class HueyxScheduler(Scheduler):
     """
 
     def enqueue_periodic_tasks(self, now, start):
-        self.huey.emit_status(
-            EVENT_CHECKING_PERIODIC,
-            timestamp=self.get_timestamp())
         self._logger.debug('Checking periodic tasks')
         for task in self.huey.read_periodic(now):
             if self.check_and_set_for_multiple_execution(task, now):
@@ -56,12 +53,8 @@ class HueyxScheduler(Scheduler):
                 return True
 
     def enqueue_periodic_task(self, task):
-        self.huey.emit_task(
-            EVENT_SCHEDULING_PERIODIC,
-            task,
-            timestamp=self.get_timestamp())
         self._logger.info('Scheduling periodic task %s.', task)
-        self.enqueue(task)
+        self.huey.enqueue(task)
 
     def _create_time_pattern(self, now: datetime.datetime):
         """Standardized time pattern which the task is executed."""

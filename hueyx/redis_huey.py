@@ -7,7 +7,7 @@ from typing import List
 from django.db import close_old_connections
 from django.utils import timezone
 from huey import RedisHuey as RedisHueyOriginal
-from huey.api import QueueTask
+from huey.api import Task
 
 EVENT_ENQUEUED = 'enqueued'
 
@@ -44,16 +44,6 @@ class RedisHuey(RedisHueyOriginal):
 
         return decorator
 
-    def enqueue(self, task):
-        """
-        Send an additional event when a task is enqueued. This is done for prometheus.
-        :param task:
-        :return:
-        """
-        super(RedisHuey, self).enqueue(task)
-        if not self.always_eager and self._fire_enqueued_event:
-            self.emit_task(EVENT_ENQUEUED, task)
-
     DeadTask = namedtuple('DeadTask', ['id', 'name', 'settings'])
     HEARTBEAT_UPDATE_INTERVAL = 60  # min wait time in seconds to send another heartbeat to redis
 
@@ -86,7 +76,7 @@ def close_db(fn, huey: RedisHuey):
         try:
             return fn(*args, **kwargs)
         finally:
-            if not huey.always_eager:
+            if not huey.immediate:
                 close_old_connections()
 
     return inner
@@ -96,7 +86,7 @@ def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int):
     # noinspection PyProtectedMember
     @wraps(fn)
     def inner(*args, **kwargs):
-        task: QueueTask = kwargs.pop('task')
+        task: Task = kwargs.pop('task')
         heartbeat = Heartbeat(huey, task, heartbeat_timeout)
         heartbeat._start_heartbeat_observation()
         heartbeat._set_timestamp()
@@ -130,7 +120,7 @@ class Heartbeat:
 
     CHECK_INTERVAL = timedelta(seconds=5)   # check timestamp just every 5 seconds -> otherwise redis can get heady load
 
-    def __init__(self, huey: RedisHuey, task: QueueTask, heartbeat_timeout: int):
+    def __init__(self, huey: RedisHuey, task: Task, heartbeat_timeout: int):
         self._huey = huey
         self.task = task
         self.heartbeat_timeout = heartbeat_timeout
@@ -168,22 +158,22 @@ class Heartbeat:
 
     def _start_heartbeat_observation(self):
         """ Start heartbeat observation and save data to restart task if necessary. """
-        data = self.task.get_data()
+        data = self.task.data
         if data:
             data[1].pop('task')
-        task_settings = dict(execute_time=self.task.execute_time, on_complete=self.task.on_complete,
+        task_settings = dict(on_complete=self.task.on_complete,
                              retries=self.task.retries, retry_delay=self.task.retry_delay, data=data)
-        self._huey.put(self._huey.get_heartbeat_observation_key(self.task.task_id),
+        self._huey.put(self._huey.get_heartbeat_observation_key(self.task.id),
                        (self.task.name, task_settings, self.heartbeat_timeout))
 
     def _stop_heartbeat_observation(self):
-        self._huey.get(self._huey.get_heartbeat_observation_key(self.task.task_id))
+        self._huey.get(self._huey.get_heartbeat_observation_key(self.task.id))
 
     def _set_timestamp(self, delta=timedelta()):
-        self._huey.put(self._huey.get_heartbeat_timestamp_key(self.task.task_id), timezone.now() + delta)
+        self._huey.put(self._huey.get_heartbeat_timestamp_key(self.task.id), timezone.now() + delta)
 
     def _get_timestamp(self):
-        return self._huey.get(self._huey.get_heartbeat_timestamp_key(self.task.task_id), peek=True)
+        return self._huey.get(self._huey.get_heartbeat_timestamp_key(self.task.id), peek=True)
 
     def _delete_timestamp(self):
-        return self._huey.get(self._huey.get_heartbeat_timestamp_key(self.task.task_id), peek=False)
+        return self._huey.get(self._huey.get_heartbeat_timestamp_key(self.task.id), peek=False)

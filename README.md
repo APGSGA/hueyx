@@ -47,7 +47,7 @@ HUEYX = {
         }
     },
     'queue_name2': {
-        'fire_enqueued_events': True,
+        'provide_prometheus_metric': True,
         'connection': {
             'connection_pool': ConnectionPool(host='localhost', port=6379, db=1)
         },
@@ -67,7 +67,7 @@ to see the exact parameter usage.
 Exceptions:
 - You can only configure redis as storage engine.
 - The `name` and `backend_class` parameters are not supported.
-- The options `multiple_scheduler_locking` and `fire_enqueued_event` have been added. See below.
+- The options `multiple_scheduler_locking` and `provide_prometheus_metric` have been added. See below.
 - The parameter `heartbeat_timeout` for `db_task` has been added. See below.
 
 ##### tasks.py
