@@ -3,13 +3,20 @@ from typing import Dict
 from cached_property import cached_property
 from django.conf import settings
 from redis import ConnectionPool
+
 from .redis_huey import RedisHuey
-from prometheus_client import Counter
+
+try:
+    from prometheus_client import Counter
+    PROMETHEUS_AVAILABLE = True
+except Exception as e:
+    PROMETHEUS_AVAILABLE = False
 
 
-EVENT_COUNTER = Counter('hueyx_task_events',
-                                  'Counts the amount of events signales by huey.',
-                                  ['queue', 'task', 'signal'])
+if PROMETHEUS_AVAILABLE:
+    EVENT_COUNTER = Counter('hueyx_task_events',
+                            'Counts the amount of events signales by huey.',
+                            ['queue', 'task', 'signal'])
 
 
 class HueyxException(Exception):
@@ -50,14 +57,14 @@ class SingleConfigReader:
     @cached_property
     def huey_instance(self):
         huey = RedisHuey(self.name, **self.huey_options, global_registry=False, connection_pool=self.connection_pool)
-        self._connect_signals_to_prometheus(huey)
+        if PROMETHEUS_AVAILABLE:
+            self._connect_signals_to_prometheus(huey)
         return huey
 
     def _connect_signals_to_prometheus(self, huey: RedisHuey):
         huey._signal.connect(self._on_signal_received)
 
     def _on_signal_received(self, signal, task, exc=None):
-        print('received signal', signal, task, exc)
         queue = self.huey_instance.name
 
         EVENT_COUNTER.labels(queue=queue, task=task.name, signal=signal).inc()
@@ -74,5 +81,3 @@ class DjangoSettingsReader:
         for name, values in settings.HUEYX.items():
             reader = SingleConfigReader(name, values)
             self.configurations[name] = reader
-
-

@@ -47,7 +47,6 @@ HUEYX = {
         }
     },
     'queue_name2': {
-        'provide_prometheus_metric': True,
         'connection': {
             'connection_pool': ConnectionPool(host='localhost', port=6379, db=1)
         },
@@ -67,7 +66,7 @@ to see the exact parameter usage.
 Exceptions:
 - You can only configure redis as storage engine.
 - The `name` and `backend_class` parameters are not supported.
-- The options `multiple_scheduler_locking` and `provide_prometheus_metric` have been added. See below.
+- The options `multiple_scheduler_locking` have been added. See below.
 - The parameter `heartbeat_timeout` for `db_task` has been added. See below.
 
 ##### tasks.py
@@ -138,13 +137,6 @@ If you run huey in a cloud environment, you will end up running multiple huey in
 schedule the periodic task.
 `multiple_scheduler_locking` prevents periodic tasks to be scheduled multiple times. It is false by default.
 
-
-##### fire_enqueued_events
-`fire_enqueued_events` has been added to better support the [huey-exporter](https://github.com/APGSGA/huey-exporter).
-Additionally to the [default huey events](https://huey.readthedocs.io/en/latest/events.html), hueyx
-emits `EVENT_ENQUEUED` when a task has been enqueued. This allows to calculate the 
-queue length on Prometheus.
-It is by default false.
 
 ### Collaborators
 

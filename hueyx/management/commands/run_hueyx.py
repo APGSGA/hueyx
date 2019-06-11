@@ -1,6 +1,5 @@
 import imp
 import logging
-import os
 
 from django.apps import apps as django_apps
 from django.core.management.base import BaseCommand
@@ -9,8 +8,13 @@ from huey.consumer_options import ConsumerConfig
 from hueyx.consumer import HueyxConsumer
 from hueyx.queues import settings_reader
 
-from prometheus_client import multiprocess
-from prometheus_client import generate_latest, CollectorRegistry
+try:
+    from prometheus_client import multiprocess
+    from prometheus_client import generate_latest, CollectorRegistry
+
+    PROMETHEUS_AVAILABLE = True
+except Exception as e:
+    PROMETHEUS_AVAILABLE = False
 
 
 logger = logging.getLogger('huey.consumer')
@@ -59,14 +63,19 @@ class Command(BaseCommand):
         consumer = HueyxConsumer(HUEY, multiple_scheduler_locking=multiple_scheduler_locking, **config.values)
         consumer.run()
 
-    def prometheus_test(self):
+    def write_prometheus_metric_to_folder(self):
         registry = CollectorRegistry()
         multiprocess.MultiProcessCollector(registry)
         generate_latest(registry)
 
     def handle(self, *args, **options):
+        if PROMETHEUS_AVAILABLE:
+            logger.info('Prometheus is available. Start writing to registry')
+            self.write_prometheus_metric_to_folder()
+        else:
+            logger.info('Prometheus not available.')
+
         queue_name = options['queue_name'][0]
         self.autodiscover()
-        self.prometheus_test()
         self.run_consumer(queue_name)
 
