@@ -102,6 +102,5 @@ class HueyxConsumer(Consumer):
         return HueyxScheduler(
             huey=self.huey,
             interval=self.scheduler_interval,
-            utc=self.utc,
             periodic=self.periodic,
             multiple_scheduler_locking=self.multiple_scheduler_locking)

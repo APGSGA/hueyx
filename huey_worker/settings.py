@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'hueyx',
-    'example'
+    'example',
+    'django_prometheus'
 ]
 
 MIDDLEWARE = [
@@ -138,7 +139,6 @@ HUEYX = {
         }
     },
     'queue2': {
-        'fire_enqueued_event': True,
         'connection': {
             'host': 'localhost',
             'port': 6379,
@@ -151,3 +151,7 @@ HUEYX = {
         }
     },
 }
+
+PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8050)
+PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
+

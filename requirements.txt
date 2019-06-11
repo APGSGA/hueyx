@@ -7,3 +7,4 @@ redis
 cached-property
 python-redis-lock
 django-prometheus
+uwsgi
