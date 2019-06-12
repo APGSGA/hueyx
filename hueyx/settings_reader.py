@@ -15,7 +15,7 @@ except Exception as e:
 
 if PROMETHEUS_AVAILABLE:
     EVENT_COUNTER = Counter('hueyx_task_events',
-                            'Counts the amount of events signales by huey.',
+                            'Counts the amount of signals by huey.',
                             ['queue', 'task', 'signal'])
 
 
@@ -30,6 +30,8 @@ class SingleConfigReader:
 
     @property
     def consumer_options(self):
+        if 'prometheus_metrics_enabled' in self.config:
+            self.config.pop('prometheus_metrics_enabled')
         if 'consumer' not in self.config:
             raise HueyxException('No consumer configured.')
         return self.config['consumer']

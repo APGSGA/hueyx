@@ -43,7 +43,7 @@ HUEYX = {
         },
         'consumer': {
             'workers': 1,
-            'worker_type': 'thread',
+            'worker_type': 'process',
         }
     },
     'queue_name2': {
@@ -52,6 +52,7 @@ HUEYX = {
         },
         'consumer': {
             'multiple_scheduler_locking': True,
+            'prometheus_metrics': True,
             'workers': 2,
             'worker_type': 'thread',
         }
@@ -66,7 +67,7 @@ to see the exact parameter usage.
 Exceptions:
 - You can only configure redis as storage engine.
 - The `name` and `backend_class` parameters are not supported.
-- The options `multiple_scheduler_locking` have been added. See below.
+- The options `multiple_scheduler_locking` and `prometheus_metrics_enabled` have been added. See below.
 - The parameter `heartbeat_timeout` for `db_task` has been added. See below.
 
 ##### tasks.py
@@ -122,6 +123,67 @@ Consumers are started with the queue_name.
 ```bash
 ./manage.py run_hueyx queue_name1
 ```
+
+#### Prometheus integration
+Prometheus is activated per queue with the `prometheus_metrics` setting.
+Prometheus will export the metric `hueyx_task_events` which counts huey signals.
+You have to implement [django-prometheus](https://github.com/korfuri/django-prometheus).
+
+```python
+# Add to installed apps in settings.py
+INSTALLED_APPS = [
+    ...,
+    'hueyx',
+    'django_prometheus',
+    ...
+]
+
+PROMETHEUS_METRICS_EXPORT_PORT = 8001
+PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
+```
+
+The metrics will be available on [localhost:8001/metrics](http://localhost:8001/metrics) as soon as the hueyx consumer
+has been started.
+
+##### Multi process mode
+Prometheus is not built for the way python handles multi processing. Therefore, we have to make additional work to let it 
+run if you use `'worker_type': 'process'`.
+
+As a workaround, Prometheus provides a [multiprocess mode](https://github.com/prometheus/client_python#multiprocess-mode-gunicorn)
+where the workers save their metrics into a shared folder and a small web server reads them and provides the metrics 
+for all workers.
+
+###### A - General
+Provide a shared folder in the environment variable `prometheus_multiproc_dir`.
+
+For example
+```bash
+export prometheus_multiproc_dir="/home/severin/Documents/mpd_prometheus"
+```
+
+###### B - Huey consumer
+
+Adjust the settings.py
+```python
+# settings.py
+# PROMETHEUS_METRICS_EXPORT_PORT = 8001
+PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8050) # Use a range which has not been used before.
+PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
+```
+With the settings above, we make sure every worker process is running on its own port.
+Also, make sure you start the consumer with the shared folder env variable.
+
+###### C - Web server
+Hueyx provides a preconfigured web server which you just can start.
+
+```bash
+./hueyx/prometheus_exporter/run.sh
+```
+
+The metrics will be reachable on `http://localhost:9100`.
+
+
+
 
 ##### Heartbeat tasks
 Heartbeat tasks are tasks with the parameter `heartbeat_timeout`. It defines the timeout in seconds. 

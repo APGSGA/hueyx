@@ -1,5 +1,6 @@
 import imp
 import logging
+import os
 
 from django.apps import apps as django_apps
 from django.core.management.base import BaseCommand
@@ -27,6 +28,7 @@ class Command(BaseCommand):
     django-admin.py run_hueyx
     """
     help = "Run a huey consumer on a specific pool"
+    consumer_options = None
 
     def add_arguments(self, parser):
         parser.add_argument('queue_name', nargs=1, type=str, help='Select the queue to listen on.')
@@ -49,13 +51,12 @@ class Command(BaseCommand):
                                      'to load module.', import_path)
 
     def run_consumer(self, queue_name):
-        consumer_options = settings_reader.configurations[queue_name].consumer_options
 
-        multiple_scheduler_locking = consumer_options.pop('multiple_scheduler_locking', False)
+        multiple_scheduler_locking = self.consumer_options.pop('multiple_scheduler_locking', False)
 
         HUEY = settings_reader.configurations[queue_name].huey_instance
 
-        config = ConsumerConfig(**consumer_options)
+        config = ConsumerConfig(**self.consumer_options)
         config.validate()
         config.setup_logger()
 
@@ -64,18 +65,24 @@ class Command(BaseCommand):
         consumer.run()
 
     def write_prometheus_metric_to_folder(self):
+        if os.environ.get('') is None:
+            logger.info('"prometheus_multiproc_dir" not provided. Start prometheus webserver only.')
+            return
         registry = CollectorRegistry()
         multiprocess.MultiProcessCollector(registry)
         generate_latest(registry)
 
     def handle(self, *args, **options):
-        if PROMETHEUS_AVAILABLE:
-            logger.info('Prometheus is available. Start writing to registry')
+        queue_name = options['queue_name'][0]
+        self.consumer_options = settings_reader.configurations[queue_name].consumer_options
+
+        prometheus_enabled = self.consumer_options.pop('prometheus_metrics', False)
+        if PROMETHEUS_AVAILABLE and prometheus_enabled:
+            logger.info('Prometheus is available and activated. Start writing to registry')
             self.write_prometheus_metric_to_folder()
         else:
             logger.info('Prometheus not available.')
 
-        queue_name = options['queue_name'][0]
         self.autodiscover()
         self.run_consumer(queue_name)
 

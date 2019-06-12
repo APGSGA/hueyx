@@ -134,6 +134,7 @@ HUEYX = {
             'db': 1
         },
         'consumer': {
+            'prometheus_metrics_enabled': True,
             'workers': 4,
             'worker_type': 'process',
         }
