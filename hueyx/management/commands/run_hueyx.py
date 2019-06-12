@@ -56,8 +56,6 @@ class Command(BaseCommand):
         consumer = HueyxConsumer(HUEY, multiple_scheduler_locking=multiple_scheduler_locking, **config.values)
         consumer.run()
 
-
-
     def handle(self, *args, **options):
         queue_name = options['queue_name'][0]
         self.consumer_options = settings_reader.configurations[queue_name].consumer_options

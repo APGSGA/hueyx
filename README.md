@@ -177,12 +177,11 @@ Also, make sure you start the consumer with the shared folder env variable.
 Hueyx provides a preconfigured web server which you just can start.
 
 ```bash
-./hueyx/prometheus_exporter/run.sh
+# The here defined port is the one you actually want to pull for the metrics.
+./manage.py run_hueyx_prometheus --port 9100
 ```
 
 The metrics will be reachable on `http://localhost:9100`.
-
-
 
 
 ##### Heartbeat tasks
