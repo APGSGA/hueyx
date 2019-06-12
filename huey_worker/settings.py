@@ -134,7 +134,6 @@ HUEYX = {
             'db': 1
         },
         'consumer': {
-            'prometheus_metrics_enabled': True,
             'workers': 4,
             'worker_type': 'process',
         }
@@ -153,6 +152,7 @@ HUEYX = {
     },
 }
 
+# PROMETHEUS_METRICS_EXPORT_PORT = 8001
 PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8050)
 PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
 

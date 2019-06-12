@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 from cached_property import cached_property
@@ -7,7 +8,8 @@ from redis import ConnectionPool
 from .redis_huey import RedisHuey
 
 try:
-    from prometheus_client import Counter
+    from prometheus_client import multiprocess, Counter
+    from prometheus_client import generate_latest, CollectorRegistry
     PROMETHEUS_AVAILABLE = True
 except Exception as e:
     PROMETHEUS_AVAILABLE = False
@@ -27,6 +29,7 @@ class SingleConfigReader:
     def __init__(self, name: str, config: Dict):
         self.name = name
         self.config = config
+        self._is_prometheus_initialized = False
 
     @property
     def consumer_options(self):
@@ -63,12 +66,23 @@ class SingleConfigReader:
             self._connect_signals_to_prometheus(huey)
         return huey
 
+    def _initialize_prometheus(self):
+        if not self._is_prometheus_initialized:
+            if os.environ.get('') is None:
+                print('"prometheus_multiproc_dir" not provided. Start prometheus webserver only.')
+                return
+            registry = CollectorRegistry()
+            multiprocess.MultiProcessCollector(registry)
+            generate_latest(registry)
+            self._is_prometheus_initialized = True
+
+
     def _connect_signals_to_prometheus(self, huey: RedisHuey):
         huey._signal.connect(self._on_signal_received)
 
     def _on_signal_received(self, signal, task, exc=None):
         queue = self.huey_instance.name
-
+        print('signal received:', signal)
         EVENT_COUNTER.labels(queue=queue, task=task.name, signal=signal).inc()
 
 
