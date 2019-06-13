@@ -7,4 +7,3 @@ redis
 cached-property
 python-redis-lock
 
-uwsgi

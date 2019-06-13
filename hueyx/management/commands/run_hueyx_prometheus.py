@@ -30,7 +30,7 @@ class Command(BaseCommand):
     def write_uwsgi_ini(self, port):
         content = f"""
         [uwsgi]
-        http-socket =:{port}
+        http-socket = 0.0.0.0:{port}
         wsgi-file = exporter.py
         """
 
@@ -39,7 +39,8 @@ class Command(BaseCommand):
             file.truncate()
 
     def handle(self, *args, **options):
-        port = options['port']
+        port = options['port'][0]
+        print('Run server on port', port)
         logger.info('Run web server on port', port)
         self.write_uwsgi_ini(port)
         subprocess.call(self.run_script_path, shell=True, cwd=self.prometheus_exporter_path)
