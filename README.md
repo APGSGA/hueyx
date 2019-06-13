@@ -125,7 +125,6 @@ Consumers are started with the queue_name.
 ```
 
 #### Prometheus integration
-Prometheus is activated per queue with the `prometheus_metrics` setting.
 Prometheus will export the metric `hueyx_task_events` which counts huey signals.
 You have to implement [django-prometheus](https://github.com/korfuri/django-prometheus).
 
@@ -146,7 +145,7 @@ The metrics will be available on [localhost:8001/metrics](http://localhost:8001/
 has been started.
 
 ##### Multi process mode
-Prometheus is not built for the way python handles multi processing. Therefore, we have to make additional work to let it 
+Prometheus is not been built for the way python handles multi processing. Therefore, we have to make additional work to let it 
 run if you use `'worker_type': 'process'`.
 
 As a workaround, Prometheus provides a [multiprocess mode](https://github.com/prometheus/client_python#multiprocess-mode-gunicorn)
@@ -174,7 +173,7 @@ With the settings above, we make sure every worker process is running on its own
 Also, make sure you start the consumer with the shared folder env variable.
 
 ###### C - Web server
-Hueyx provides a preconfigured web server which you just can start.
+Hueyx provides a preconfigured web server which you can just start.
 
 ```bash
 # The here defined port is the one you actually want to pull for the metrics.
