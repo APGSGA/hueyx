@@ -183,7 +183,8 @@ Hueyx provides a preconfigured web server which you can just start.
 The metrics will be reachable on `http://localhost:9100`.
 
 If you are using Kubernetes use the [sidecar pattern](https://www.abhishek-tiwari.com/a-sidecar-for-your-service-mesh/)
-to implement the web server into the consumer pod.
+to implement the web server into the consumer pod. An [example sidecar container](https://hub.docker.com/r/apgsga/hueyx-prometheus-sidecar)
+is available.
 
 
 ##### Heartbeat tasks
