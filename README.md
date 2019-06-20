@@ -6,6 +6,14 @@ A django extension to run huey with multiple queues.
 Multiple queues allow tasks to not block each other and to scale independently.
 Only the redis storage is supported.
 
+---
+##### Important
+
+- If you use `huey 1.x` then install `hueyx 0.1.2`.
+- If you use `huey 2.x` then install `hueyx  > 1.0`.
+
+---
+
 ### Usage
 
 Install it with
