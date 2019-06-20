@@ -19,7 +19,7 @@ This tutorial as basically aligned with [python packaging tutorial](https://pack
 Be sure you have installed the `requirements.txt` and your pip is up to date.
 
 - Update version in setup.py.
-- Update [release_notes.md](./release_notes.md).
+- Update [release_notes.md](../release_notes.md).
 - Build library.
 ```bash
 # Build library

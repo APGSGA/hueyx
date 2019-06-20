@@ -212,4 +212,4 @@ schedule the periodic task.
 
 ### Collaborators
 
-- [Update hueyx on PyPi](./update_version.md)
+- [Update hueyx on PyPi](documentation/update_version.md)

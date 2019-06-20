@@ -6,6 +6,7 @@
 - [huey-exporter](https://github.com/APGSGA/huey-exporter) is not supported anymore.
 - Added Prometheus support.
     - Added new command 'run_hueyx_prometheus'.
+- Added migration document.
 
 ### 0.1.2
 - Added `heartbeat_timeout` parameter for `db_task`

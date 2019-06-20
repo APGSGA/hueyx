@@ -6,16 +6,14 @@ from typing import List
 
 from django.db import close_old_connections
 from django.utils import timezone
-from huey import RedisHuey as RedisHueyOriginal
+from huey import Huey as HueyOriginal
 from huey.api import Task
+from huey.storage import RedisStorage
 
-EVENT_ENQUEUED = 'enqueued'
 
-
-class RedisHuey(RedisHueyOriginal):
+class RedisHuey(HueyOriginal):
     def __init__(self, *args, **kwargs):
-        self._fire_enqueued_event = kwargs.pop('fire_enqueued_events', False)
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, storage_class=RedisStorage, **kwargs)
 
     """
     Extends the RedisHuey with new decorators which start a new transaction for every task.
