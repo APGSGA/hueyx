@@ -18,6 +18,8 @@ class HueyxScheduler(Scheduler):
 
     def enqueue_periodic_tasks(self, now, start):
         self._logger.debug('Checking periodic tasks')
+        if now is None:
+            datetime.datetime.now()
         for task in self.huey.read_periodic(now):
             if self.check_and_set_for_multiple_execution(task, now):
                 self.enqueue_periodic_task(task)
