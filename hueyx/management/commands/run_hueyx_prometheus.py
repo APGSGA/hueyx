@@ -39,7 +39,7 @@ class Command(BaseCommand):
             file.truncate()
 
     def handle(self, *args, **options):
-        port = options['port'][0]
+        port = options['port']
         print('Run server on port', port)
         logger.info('Run web server on port', port)
         self.write_uwsgi_ini(port)

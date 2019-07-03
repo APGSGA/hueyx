@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='hueyx',
-    version='1.0.0.dev2',
+    version='1.0.0.dev3',
     packages=find_packages(),
     data_files=[
         ('hueyx', ['hueyx/prometheus_exporter/run.sh'])
