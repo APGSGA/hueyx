@@ -10,8 +10,11 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='hueyx',
-    version='1.0.0.dev1',
+    version='1.0.0.dev2',
     packages=find_packages(),
+    data_files=[
+        ('hueyx', ['hueyx/prometheus_exporter/run.sh'])
+    ],
     include_package_data=True,
     license='MIT License',  # example license
     description='Django huey extension which supports multiple huey queues.',
@@ -39,5 +42,5 @@ setup(
         'redis',
         'python-redis-lock',
         'uwsgi'
-    ]
+    ],
 )
