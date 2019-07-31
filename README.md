@@ -132,69 +132,6 @@ Consumers are started with the queue_name.
 ./manage.py run_hueyx queue_name1
 ```
 
-#### Prometheus integration
-Prometheus will export the metric `hueyx_task_events` which counts huey signals.
-You have to implement [django-prometheus](https://github.com/korfuri/django-prometheus).
-
-```python
-# Add to installed apps in settings.py
-INSTALLED_APPS = [
-    ...,
-    'hueyx',
-    'django_prometheus',
-    ...
-]
-
-PROMETHEUS_METRICS_EXPORT_PORT = 8001
-PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
-```
-
-The metrics will be available on [localhost:8001/metrics](http://localhost:8001/metrics) as soon as the hueyx consumer
-has been started.
-
-##### Multi process mode
-Prometheus is not been built for the way python handles multi processing. Therefore, we have to make additional work to let it 
-run if you use `'worker_type': 'process'`.
-
-As a workaround, Prometheus provides a [multiprocess mode](https://github.com/prometheus/client_python#multiprocess-mode-gunicorn)
-where the workers save their metrics into a shared folder and a small web server reads them and provides the metrics 
-for all workers.
-
-###### A - General
-Provide a shared folder in the environment variable `prometheus_multiproc_dir`.
-
-For example
-```bash
-export prometheus_multiproc_dir="/home/severin/Documents/mpd_prometheus"
-```
-
-###### B - Huey consumer
-
-Adjust the settings.py
-```python
-# settings.py
-# PROMETHEUS_METRICS_EXPORT_PORT = 8001
-PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8050) # Use a range which has not been used before.
-PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
-```
-With the settings above, we make sure every worker process is running on its own port.
-Also, make sure you start the consumer with the shared folder env variable.
-
-###### C - Web server
-Hueyx provides a preconfigured web server which you can just start.
-
-```bash
-# The here defined port is the one you actually want to pull for the metrics.
-./manage.py run_hueyx_prometheus --port 9100
-```
-
-The metrics will be reachable on `http://localhost:9100`.
-
-If you are using Kubernetes use the [sidecar pattern](https://www.abhishek-tiwari.com/a-sidecar-for-your-service-mesh/)
-to implement the web server into the consumer pod. An [example sidecar container](https://hub.docker.com/r/apgsga/hueyx-prometheus-sidecar)
-is available.
-
-
 ##### Heartbeat tasks
 Heartbeat tasks are tasks with the parameter `heartbeat_timeout`. It defines the timeout in seconds. 
 They get a Heartbeat object which needs to be called in order to send a heartbeat to redis. 

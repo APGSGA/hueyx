@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Dict
 
@@ -6,17 +7,6 @@ from django.conf import settings
 from redis import ConnectionPool
 
 from .redis_huey import RedisHuey
-
-try:
-    from prometheus_client import Counter
-    PROMETHEUS_AVAILABLE = True
-except Exception as e:
-    PROMETHEUS_AVAILABLE = False
-
-if PROMETHEUS_AVAILABLE:
-    EVENT_COUNTER = Counter('hueyx_task_events',
-                            'Counts the amount of signals by huey.',
-                            ['queue', 'task', 'signal'])
 
 
 class HueyxException(Exception):
@@ -60,9 +50,12 @@ class SingleConfigReader:
     @cached_property
     def huey_instance(self):
         huey = RedisHuey(self.name, **self.huey_options, global_registry=False, connection_pool=self.connection_pool)
-        if PROMETHEUS_AVAILABLE:
-            self._connect_signals_to_prometheus(huey)
+        self._connect_signals_to_prometheus(huey)
         return huey
+
+    @cached_property
+    def redis(self):
+        return self.huey_instance.storage.conn
 
     def _connect_signals_to_prometheus(self, huey: RedisHuey):
         huey._signal.connect(self._on_signal_received)
@@ -71,7 +64,13 @@ class SingleConfigReader:
         queue = self.huey_instance.name
         pid = os.getpid()
         print('signal received:', signal, pid)
-        EVENT_COUNTER.labels(queue=queue, task=task.name, signal=signal).inc()
+        data = {
+            'queue': queue,
+            'pid': pid,
+            'signal': signal,
+            'task': task.name
+        }
+        self.redis.publish('hueyx.huey2.signaling', json.dumps(data))
 
 
 class DjangoSettingsReader:
