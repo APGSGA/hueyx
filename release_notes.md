@@ -2,10 +2,7 @@
 
 ### 1.0.0
 - Added support for huey 2.0 and its new signal system.
-- Removed `fire_enqueued_events`. By default, hueyx will automatically report metrics to prometheus if installed.
-- [huey-exporter](https://github.com/APGSGA/huey-exporter) is not supported anymore.
-- Added Prometheus support.
-    - Added new command 'run_hueyx_prometheus'.
+- Removed `fire_enqueued_events`. By default, hueyx will automatically report metrics to redis.
 - Added migration document.
 
 ### 0.1.2
