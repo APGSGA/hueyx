@@ -151,5 +151,6 @@ HUEYX = {
         }
     },
 }
+HUEYX_ENVIRONMENT = 'staging.huey_dev'
 
 

@@ -59,6 +59,13 @@ class SingleConfigReader:
     def redis(self):
         return self.huey_instance.storage.conn
 
+    @property
+    def hueyx_environment(self):
+        environment = 'default'
+        if hasattr(settings, 'HUEYX_ENVIRONMENT'):
+            environment = settings.HUEYX_ENVIRONMENT
+        return environment
+
     def _connect_signals_to_redis(self, huey: RedisHuey):
         huey._signal.connect(self._on_signal_received)
 
@@ -67,6 +74,7 @@ class SingleConfigReader:
         pid = os.getpid()
         print('signal received:', signal, pid)
         data = {
+            'environment': self.hueyx_environment,
             'queue': queue,
             'pid': pid,
             'signal': signal,

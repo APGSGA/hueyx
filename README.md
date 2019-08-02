@@ -147,6 +147,27 @@ schedule the periodic task.
 `multiple_scheduler_locking` prevents periodic tasks to be scheduled multiple times. It is false by default.
 
 
+### Huey signals
+Hueyx pushes all huey signals to the redis pubsub `hueyx.huey2.signaling`.
+The format of the message is
+```python
+{
+    'environment': settings.HUEYX_ENVIRONMENT,
+    'queue': queue,
+    'pid': pid,
+    'signal': signal_name,
+    'task': task_name
+}
+``` 
+The environment parameter is a optional free variable which can be set in the settings:
+```python
+HUEYX_ENVIRONMENT = 'your.environment.and.service'
+```
+
+##### Prometheus
+The [huey-exporter](https://github.com/APGSGA/huey-exporter) project takes the signals und reports it to prometheus.
+
+
 ### Collaborators
 
 - [Update hueyx on PyPi](documentation/update_version.md)
