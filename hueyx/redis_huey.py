@@ -81,10 +81,6 @@ def close_db(fn, huey: RedisHuey):
     return inner
 
 
-
-
-
-
 def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int):
     # noinspection PyProtectedMember
     @wraps(fn)
