@@ -148,7 +148,14 @@ schedule the periodic task.
 
 
 ### Huey signals
-Hueyx pushes all huey signals to the redis pubsub `hueyx.huey2.signaling`.
+
+Optionally, hueyx pushes all huey signals to the redis pubsub `hueyx.huey2.signaling` if enabled.
+```python
+HUEYX_SIGNALS = {
+    'enabled': True,
+    'environment': 'your environment'
+}
+```
 The format of the message is
 ```python
 {
@@ -159,10 +166,8 @@ The format of the message is
     'task': task_name
 }
 ``` 
-The environment parameter is a optional free variable which can be set in the settings:
-```python
-HUEYX_ENVIRONMENT = 'your.environment.and.service'
-```
+The environment parameter is a optional variable.
+
 
 ##### Prometheus
 The [huey-exporter](https://github.com/APGSGA/huey-exporter) project takes the signals und reports it to prometheus.

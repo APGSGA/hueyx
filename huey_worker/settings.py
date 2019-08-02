@@ -151,6 +151,10 @@ HUEYX = {
         }
     },
 }
-HUEYX_ENVIRONMENT = 'staging.huey_dev'
+
+HUEYX_SIGNALS = {
+    'enabled': True,
+    'environment': 'staging.hueyx_dev'
+}
 
 
