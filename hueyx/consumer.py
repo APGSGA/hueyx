@@ -23,7 +23,6 @@ class HueyxScheduler(Scheduler):
         for task in self.huey.read_periodic(now):
             if self.check_and_set_for_multiple_execution(task, now):
                 self.enqueue_periodic_task(task)
-        self.restart_dead_tasks()
         return True
 
     def check_and_set_for_multiple_execution(self, task, now):
@@ -83,16 +82,6 @@ class HueyxScheduler(Scheduler):
         conn: redis.Redis = self.huey.storage.conn
         conn.set(full_name, current_time_pattern)
 
-    def restart_dead_tasks(self):
-        self._logger.debug('Restart dead tasks')
-        for task in self.huey.get_dead_tasks():
-            task_type = self.huey.registry.get_task_class(task.name)
-            self.huey.revoke_by_id(task.id)
-            self.huey.get(self.huey.get_heartbeat_observation_key(task.id))
-            task = task_type(**task.settings)
-            self._logger.debug(f'Restart {task.name}')
-            self.huey.enqueue(task)
-
 
 class HueyxConsumer(Consumer):
     def __init__(self, *args, **kwargs):
@@ -106,3 +95,17 @@ class HueyxConsumer(Consumer):
             interval=self.scheduler_interval,
             periodic=self.periodic,
             multiple_scheduler_locking=self.multiple_scheduler_locking)
+
+    def _restart_dead_tasks(self):
+        self._logger.debug('Restart dead tasks')
+        for task in self.huey.get_dead_tasks():
+            task_type = self.huey._registry.string_to_task(task.name)
+            self.huey.revoke_by_id(task.id)
+            self.huey.get(self.huey.get_heartbeat_observation_key(task.id))
+            task = task_type(**task.settings)
+            self._logger.debug(f'Restart {task.name}')
+            self.huey.enqueue(task)
+
+    def run(self):
+        self._restart_dead_tasks()
+        super().run()

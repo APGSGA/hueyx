@@ -20,8 +20,8 @@ def my_db_task1():
     return 1
 
 
-@HUEY_Q1.task()
-def my_long_running_task1():
+@HUEY_Q1.db_task(heartbeat_timeout=120)
+def my_long_running_task1(heartbeat):
     print(f'{datetime.datetime.now()} my_long_running_task1 called. Sleeps 60 seconds.')
     time.sleep(60)
     print(f'{datetime.datetime.now()} Finish my_long_running_task1.')
