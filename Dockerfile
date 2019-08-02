@@ -3,7 +3,6 @@ ENV prometheus_multiproc_dir=multiproc-tmp
 
 ARG APPDIR=/app/
 COPY requirements.txt $APPDIR
-COPY requirements_sidecar.txt $APPDIR
 RUN apk add --no-cache --virtual .build-deps \
 		gcc \
 		libc-dev \
