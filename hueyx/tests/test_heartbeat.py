@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 from django.utils import timezone
-from huey.api import QueueTask
+from huey.api import Task
 from huey.constants import EmptyData
 
 from hueyx.redis_huey import RedisHuey, Heartbeat, HeartbeatTimeoutError, RevokedError, _wrap_heartbeat
@@ -20,9 +20,12 @@ class RedisHueyMock(RedisHuey):
 
 class HeartbeatTest(TestCase):
 
+    def example_func(self):
+        return 0
+
     def setUp(self, *args):
         self.huey = RedisHueyMock()
-        self.task = QueueTask(retries=5, retry_delay=3)
+        self.task = Task(retries=5, retry_delay=3)
         self.timeout = 120
         self.heartbeat = Heartbeat(self.huey, self.task, self.timeout)
         self.redis: MagicMock = self.huey.storage
@@ -32,11 +35,11 @@ class HeartbeatTest(TestCase):
     def test_start_heartbeat_observation(self):
         self.heartbeat._start_heartbeat_observation()
         self.assertEqual(self.redis.method_calls[0][0], 'put_data')
-        self.assertEqual(self.redis.method_calls[0][1][0], f'hb:{self.task.task_id}')
+        self.assertEqual(self.redis.method_calls[0][1][0], f'hb:{self.task.id}')
 
     def test_stop_heartbeat_observation(self):
         def pop_data(*args, **kwargs):
-            self.assertEqual(args[0], f'hb:{self.task.task_id}')
+            self.assertEqual(args[0], f'hb:{self.task.id}')
             self.called = True
             return EmptyData
 
@@ -47,11 +50,11 @@ class HeartbeatTest(TestCase):
     def test_set_timestamp(self):
         self.heartbeat._set_timestamp()
         self.assertEqual(self.redis.method_calls[0][0], 'put_data')
-        self.assertEqual(self.redis.method_calls[0][1][0], f'hbts:{self.task.task_id}')
+        self.assertEqual(self.redis.method_calls[0][1][0], f'hbts:{self.task.id}')
 
     def test_get_timestamp(self):
         def peek_data(*args, **kwargs):
-            self.assertEqual(args[0], f'hbts:{self.task.task_id}')
+            self.assertEqual(args[0], f'hbts:{self.task.id}')
             self.called = True
             return EmptyData
 
@@ -61,7 +64,7 @@ class HeartbeatTest(TestCase):
 
     def test_delete_timestamp(self):
         def pop_data(*args, **kwargs):
-            self.assertEqual(args[0], f'hbts:{self.task.task_id}')
+            self.assertEqual(args[0], f'hbts:{self.task.id}')
             self.called = True
             return EmptyData
 
@@ -147,6 +150,7 @@ class HeartbeatTest(TestCase):
         self.heartbeat()
         self.assertEqual(self.call_cnt, 2)
 
+
 class HeartbeatMock(MagicMock):
 
     def _start_heartbeat_observation(self):
@@ -163,7 +167,7 @@ class HeartbeatMock(MagicMock):
 class HeartbeatWrapperTest(TestCase):
     def setUp(self):
         self.huey = RedisHueyMock()
-        self.task = QueueTask(retries=5, retry_delay=3)
+        self.task = Task(retries=5, retry_delay=3)
         self.timeout = 120
         self.heartbeat = None
 

@@ -1,14 +1,15 @@
 from collections import namedtuple
-from contextlib import contextmanager
-from datetime import timedelta
-from functools import wraps
 from typing import List
 
 from django.db import close_old_connections
-from django.utils import timezone
+
 from huey import Huey as HueyOriginal
-from huey.api import Task
 from huey.storage import RedisStorage
+from contextlib import contextmanager
+from huey.api import Task
+from functools import wraps
+from datetime import timedelta
+from django.utils import timezone
 
 
 class RedisHuey(HueyOriginal):
@@ -78,6 +79,10 @@ def close_db(fn, huey: RedisHuey):
                 close_old_connections()
 
     return inner
+
+
+
+
 
 
 def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int):
@@ -157,8 +162,8 @@ class Heartbeat:
     def _start_heartbeat_observation(self):
         """ Start heartbeat observation and save data to restart task if necessary. """
         data = self.task.data
-        if data:
-            data[1].pop('task')
+        # if data:
+        #     data[1].pop('task')
         task_settings = dict(on_complete=self.task.on_complete,
                              retries=self.task.retries, retry_delay=self.task.retry_delay, data=data)
         self._huey.put(self._huey.get_heartbeat_observation_key(self.task.id),
