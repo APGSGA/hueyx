@@ -4,6 +4,7 @@ from typing import Dict
 
 from cached_property import cached_property
 from django.conf import settings
+from huey.storage import RedisStorage
 from redis import ConnectionPool
 
 from .redis_huey import RedisHuey
@@ -50,14 +51,15 @@ class SingleConfigReader:
     @cached_property
     def huey_instance(self):
         huey = RedisHuey(self.name, **self.huey_options, global_registry=False, connection_pool=self.connection_pool)
-        self._connect_signals_to_prometheus(huey)
+        if isinstance(huey.storage, RedisStorage):
+            self._connect_signals_to_redis(huey)
         return huey
 
     @cached_property
     def redis(self):
         return self.huey_instance.storage.conn
 
-    def _connect_signals_to_prometheus(self, huey: RedisHuey):
+    def _connect_signals_to_redis(self, huey: RedisHuey):
         huey._signal.connect(self._on_signal_received)
 
     def _on_signal_received(self, signal, task, exc=None):
