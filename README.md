@@ -9,7 +9,7 @@ Only the redis storage is supported.
 ---
 ##### Important
 
-- If you use `huey 1.x` then install `hueyx 0.1.2`. Checkout the git tag
+- If you use `huey 1.x` then install `hueyx 0.1.2`. Checkout the git tag [huey1.x](https://github.com/APGSGA/hueyx/tree/huey1.x).
 - If you use `huey 2.x` then install `hueyx  > 1.0`.
 
 ---
