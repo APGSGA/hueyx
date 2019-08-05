@@ -66,6 +66,13 @@ class RedisHuey(HueyOriginal):
                 dead_tasks.append(self.DeadTask(task_id, name, task_settings))
         return dead_tasks
 
+    def restart_dead_tasks(self):
+        for task in self.get_dead_tasks():
+            task_type = self._registry.string_to_task(task.name)
+            self.revoke_by_id(task.id)
+            self.get(self.get_heartbeat_observation_key(task.id))
+            task = task_type(**task.settings)
+            self.enqueue(task)
 
 def close_db(fn, huey: RedisHuey):
     """Decorator to be used with tasks that may operate on the database."""

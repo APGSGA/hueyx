@@ -96,16 +96,6 @@ class HueyxConsumer(Consumer):
             periodic=self.periodic,
             multiple_scheduler_locking=self.multiple_scheduler_locking)
 
-    def _restart_dead_tasks(self):
-        self._logger.debug('Restart dead tasks')
-        for task in self.huey.get_dead_tasks():
-            task_type = self.huey._registry.string_to_task(task.name)
-            self.huey.revoke_by_id(task.id)
-            self.huey.get(self.huey.get_heartbeat_observation_key(task.id))
-            task = task_type(**task.settings)
-            self._logger.debug(f'Restart {task.name}')
-            self.huey.enqueue(task)
-
     def run(self):
-        self._restart_dead_tasks()
+        self.huey.restart_dead_tasks()
         super().run()
