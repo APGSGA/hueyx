@@ -76,7 +76,7 @@ Exceptions:
 - You can only configure redis as storage engine.
 - The `name` and `backend_class` parameters are not supported.
 - The options `multiple_scheduler_locking` and `prometheus_metrics_enabled` have been added. See below.
-- The parameter `heartbeat_timeout` for `db_task` has been added. See below.
+- The parameters `heartbeat_timeout` for `db_task` has been added. See below.
 
 ##### tasks.py
 
@@ -149,13 +149,14 @@ schedule the periodic task.
 
 ### Huey signals
 
-Optionally, hueyx pushes all huey signals to the redis pubsub `hueyx.huey2.signaling` if enabled.
+Optionally hueyx pushes all huey signals to the redis pubsub `hueyx.huey2.signaling` if enabled.
 ```python
 HUEYX_SIGNALS = {
     'enabled': True,
     'environment': 'your environment'
 }
 ```
+
 The format of the message is
 ```python
 {
