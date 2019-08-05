@@ -80,7 +80,6 @@ class SingleConfigReader:
     def _on_signal_received(self, signal, task, exc=None):
         queue = self.huey_instance.name
         pid = os.getpid()
-        print('signal received:', signal, pid)
         data = {
             'environment': self.environment,
             'queue': queue,
