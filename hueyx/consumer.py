@@ -97,5 +97,5 @@ class HueyxConsumer(Consumer):
             multiple_scheduler_locking=self.multiple_scheduler_locking)
 
     def run(self):
-        self.huey.restart_dead_tasks()
+        self.huey.heartbeat_manager.restart_dead_tasks()
         super().run()

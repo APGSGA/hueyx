@@ -96,7 +96,7 @@ class DjangoSettingsReader:
 
     def interpret_settings(self):
         if not hasattr(settings, 'HUEYX'):
-            raise HueyxException('No HUEYX config found in settings.py')
+            raise HueyxException('No HUEYX config found in settings')
 
         for name, values in settings.HUEYX.items():
             reader = SingleConfigReader(name, values)

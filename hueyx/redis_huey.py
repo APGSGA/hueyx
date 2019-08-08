@@ -12,9 +12,13 @@ from datetime import timedelta
 from django.utils import timezone
 
 
+
+
+
 class RedisHuey(HueyOriginal):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, storage_class=RedisStorage, **kwargs)
+        self.heartbeat_manager = HeartbeatManager(self)
 
     """
     Extends the RedisHuey with new decorators which start a new transaction for every task.
@@ -46,6 +50,34 @@ class RedisHuey(HueyOriginal):
     DeadTask = namedtuple('DeadTask', ['id', 'name', 'settings'])
     HEARTBEAT_UPDATE_INTERVAL = 60  # min wait time in seconds to send another heartbeat to redis
 
+    # def get_dead_tasks(self) -> List[DeadTask]:
+    #     dead_tasks = []
+    #     observation_key_prefix = self.get_heartbeat_observation_key('')
+    #     for result in self.storage.conn.hscan_iter(self.storage.result_key, match=observation_key_prefix + '*'):
+    #         key = result[0].decode()
+    #         task_id = key[len(observation_key_prefix):]
+    #         name, task_settings, heartbeat_timeout = self.get(key, peek=True)
+    #         timestamp = self.get(self.get_heartbeat_timestamp_key(task_id), peek=True)
+    #         if not timestamp or timestamp + timedelta(seconds=heartbeat_timeout) <= timezone.now():
+    #             dead_tasks.append(self.DeadTask(task_id, name, task_settings))
+    #     return dead_tasks
+
+    def restart_dead_tasks(self):
+        for task in self.get_dead_tasks():
+            task_type = self._registry.string_to_task(task.name)
+            self.revoke_by_id(task.id)
+            self.get(self.get_heartbeat_observation_key(task.id))
+            task = task_type(**task.settings)
+            self.enqueue(task)
+
+
+class HeartbeatManager:
+    def __init__(self, redis_huey: 'RedisHuey'):
+        self.redis_huey: RedisHuey = redis_huey
+
+    DeadTask = namedtuple('DeadTask', ['id', 'name', 'settings'])
+    HEARTBEAT_UPDATE_INTERVAL = 60  # min wait time in seconds to send another heartbeat to redis
+
     @staticmethod
     def get_heartbeat_observation_key(task_id):
         return f'hb:{task_id}'
@@ -57,22 +89,25 @@ class RedisHuey(HueyOriginal):
     def get_dead_tasks(self) -> List[DeadTask]:
         dead_tasks = []
         observation_key_prefix = self.get_heartbeat_observation_key('')
-        for result in self.storage.conn.hscan_iter(self.storage.result_key, match=observation_key_prefix + '*'):
+        for result in self.redis_huey.storage.conn.hscan_iter(self.redis_huey.storage.result_key,
+                                                              match=observation_key_prefix + '*'):
             key = result[0].decode()
             task_id = key[len(observation_key_prefix):]
-            name, task_settings, heartbeat_timeout = self.get(key, peek=True)
-            timestamp = self.get(self.get_heartbeat_timestamp_key(task_id), peek=True)
+            name, task_settings, heartbeat_timeout = self.redis_huey.get(key, peek=True)
+            timestamp = self.redis_huey.get(self.get_heartbeat_timestamp_key(task_id), peek=True)
             if not timestamp or timestamp + timedelta(seconds=heartbeat_timeout) <= timezone.now():
                 dead_tasks.append(self.DeadTask(task_id, name, task_settings))
         return dead_tasks
 
     def restart_dead_tasks(self):
         for task in self.get_dead_tasks():
-            task_type = self._registry.string_to_task(task.name)
-            self.revoke_by_id(task.id)
-            self.get(self.get_heartbeat_observation_key(task.id))
+            task_type = self.redis_huey._registry.string_to_task(task.name)
+            self.redis_huey.revoke_by_id(task.id)
+            self.redis_huey.get(self.get_heartbeat_observation_key(task.id))
             task = task_type(**task.settings)
-            self.enqueue(task)
+            self.redis_huey.enqueue(task)
+
+
 
 def close_db(fn, huey: RedisHuey):
     """Decorator to be used with tasks that may operate on the database."""
@@ -171,17 +206,17 @@ class Heartbeat:
         task_settings = dict(on_complete=self.task.on_complete,
                              retries=self.task.retries, retry_delay=self.task.retry_delay, args=args, kwargs=kwargs)
         task_name = self.task.__module__ + '.' + self.task.name
-        self._huey.put(self._huey.get_heartbeat_observation_key(self.task.id),
+        self._huey.put(self._huey.heartbeat_manager.get_heartbeat_observation_key(self.task.id),
                        (task_name, task_settings, self.heartbeat_timeout))
 
     def _stop_heartbeat_observation(self):
-        self._huey.get(self._huey.get_heartbeat_observation_key(self.task.id))
+        self._huey.get(self._huey.heartbeat_manager.get_heartbeat_observation_key(self.task.id))
 
     def _set_timestamp(self, delta=timedelta()):
-        self._huey.put(self._huey.get_heartbeat_timestamp_key(self.task.id), timezone.now() + delta)
+        self._huey.put(self._huey.heartbeat_manager.get_heartbeat_timestamp_key(self.task.id), timezone.now() + delta)
 
     def _get_timestamp(self):
-        return self._huey.get(self._huey.get_heartbeat_timestamp_key(self.task.id), peek=True)
+        return self._huey.get(self._huey.heartbeat_manager.get_heartbeat_timestamp_key(self.task.id), peek=True)
 
     def _delete_timestamp(self):
-        return self._huey.get(self._huey.get_heartbeat_timestamp_key(self.task.id), peek=False)
+        return self._huey.get(self._huey.heartbeat_manager.get_heartbeat_timestamp_key(self.task.id), peek=False)

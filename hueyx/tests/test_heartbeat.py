@@ -236,7 +236,7 @@ class RedisHueyTest(TestCase):
             return timezone.now()
 
         self.huey.get = get
-        tasks = self.huey.get_dead_tasks()
+        tasks = self.huey.heartbeat_manager.get_dead_tasks()
         self.assertEqual(len(tasks), 0)
         self.assertTrue(self.called)
 
@@ -248,7 +248,7 @@ class RedisHueyTest(TestCase):
                 return 'name', 'settings', 60
 
         self.huey.get = get
-        tasks = self.huey.get_dead_tasks()
+        tasks = self.huey.heartbeat_manager.get_dead_tasks()
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0], self.huey.DeadTask('task-id', 'name', 'settings'))
         self.assertTrue(self.called)
@@ -262,7 +262,7 @@ class RedisHueyTest(TestCase):
             return timezone.now() - timedelta(seconds=60)
 
         self.huey.get = get
-        tasks = self.huey.get_dead_tasks()
+        tasks = self.huey.heartbeat_manager.get_dead_tasks()
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0], self.huey.DeadTask('task-id', 'name', 'settings'))
         self.assertTrue(self.called)
