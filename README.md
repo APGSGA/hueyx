@@ -160,7 +160,7 @@ HUEYX_SIGNALS = {
 The format of the message is
 ```python
 {
-    'environment': settings.HUEYX_ENVIRONMENT,
+    'environment': settings.HUEYX_SIGNALS['environment'],
     'queue': queue,
     'pid': pid,
     'signal': signal_name,
