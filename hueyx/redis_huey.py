@@ -12,9 +12,6 @@ from datetime import timedelta
 from django.utils import timezone
 
 
-
-
-
 class RedisHuey(HueyOriginal):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, storage_class=RedisStorage, **kwargs)
@@ -47,28 +44,19 @@ class RedisHuey(HueyOriginal):
 
         return decorator
 
-    DeadTask = namedtuple('DeadTask', ['id', 'name', 'settings'])
-    HEARTBEAT_UPDATE_INTERVAL = 60  # min wait time in seconds to send another heartbeat to redis
 
-    # def get_dead_tasks(self) -> List[DeadTask]:
-    #     dead_tasks = []
-    #     observation_key_prefix = self.get_heartbeat_observation_key('')
-    #     for result in self.storage.conn.hscan_iter(self.storage.result_key, match=observation_key_prefix + '*'):
-    #         key = result[0].decode()
-    #         task_id = key[len(observation_key_prefix):]
-    #         name, task_settings, heartbeat_timeout = self.get(key, peek=True)
-    #         timestamp = self.get(self.get_heartbeat_timestamp_key(task_id), peek=True)
-    #         if not timestamp or timestamp + timedelta(seconds=heartbeat_timeout) <= timezone.now():
-    #             dead_tasks.append(self.DeadTask(task_id, name, task_settings))
-    #     return dead_tasks
+def close_db(fn, huey: RedisHuey):
+    """Decorator to be used with tasks that may operate on the database."""
 
-    def restart_dead_tasks(self):
-        for task in self.get_dead_tasks():
-            task_type = self._registry.string_to_task(task.name)
-            self.revoke_by_id(task.id)
-            self.get(self.get_heartbeat_observation_key(task.id))
-            task = task_type(**task.settings)
-            self.enqueue(task)
+    @wraps(fn)
+    def inner(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            if not huey.immediate:
+                close_old_connections()
+
+    return inner
 
 
 class HeartbeatManager:
@@ -109,18 +97,7 @@ class HeartbeatManager:
 
 
 
-def close_db(fn, huey: RedisHuey):
-    """Decorator to be used with tasks that may operate on the database."""
 
-    @wraps(fn)
-    def inner(*args, **kwargs):
-        try:
-            return fn(*args, **kwargs)
-        finally:
-            if not huey.immediate:
-                close_old_connections()
-
-    return inner
 
 
 def _wrap_heartbeat(fn, huey: RedisHuey, heartbeat_timeout: int):
@@ -192,7 +169,7 @@ class Heartbeat:
             if not timestamp:
                 raise HeartbeatTimeoutError()
             now = timezone.now()
-            if timestamp + timedelta(seconds=self._huey.HEARTBEAT_UPDATE_INTERVAL) <= now:
+            if timestamp + timedelta(seconds=self._huey.heartbeat_manager.HEARTBEAT_UPDATE_INTERVAL) <= now:
                 if timestamp + timedelta(seconds=self.heartbeat_timeout) <= now:
                     raise HeartbeatTimeoutError()
                 self._set_timestamp()

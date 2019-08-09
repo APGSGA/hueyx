@@ -83,7 +83,7 @@ class HeartbeatTest(TestCase):
 
     def test_heartbeat_new_timestamp(self):
         def get_timestamp():
-            return timezone.now() - timedelta(seconds=self.huey.HEARTBEAT_UPDATE_INTERVAL)
+            return timezone.now() - timedelta(seconds=self.huey.heartbeat_manager.HEARTBEAT_UPDATE_INTERVAL)
 
         def set_timestamp():
             self.called = True
@@ -132,7 +132,7 @@ class HeartbeatTest(TestCase):
     def test_caching(self):
         def get_timestamp():
             self.call_cnt += 1
-            return timezone.now() - timedelta(seconds=self.huey.HEARTBEAT_UPDATE_INTERVAL)
+            return timezone.now() - timedelta(seconds=self.huey.heartbeat_manager.HEARTBEAT_UPDATE_INTERVAL)
 
         self.heartbeat._get_timestamp = get_timestamp
         self.heartbeat()
@@ -142,7 +142,7 @@ class HeartbeatTest(TestCase):
     def test_no_caching(self):
         def get_timestamp():
             self.call_cnt += 1
-            return timezone.now() - timedelta(seconds=self.huey.HEARTBEAT_UPDATE_INTERVAL)
+            return timezone.now() - timedelta(seconds=self.huey.heartbeat_manager.HEARTBEAT_UPDATE_INTERVAL)
 
         self.heartbeat._get_timestamp = get_timestamp
         self.heartbeat.CHECK_INTERVAL = timedelta()
@@ -250,7 +250,7 @@ class RedisHueyTest(TestCase):
         self.huey.get = get
         tasks = self.huey.heartbeat_manager.get_dead_tasks()
         self.assertEqual(len(tasks), 1)
-        self.assertEqual(tasks[0], self.huey.DeadTask('task-id', 'name', 'settings'))
+        self.assertEqual(tasks[0], self.huey.heartbeat_manager.DeadTask('task-id', 'name', 'settings'))
         self.assertTrue(self.called)
 
     def test_dead_tasks_timestamp_expired(self):
@@ -264,5 +264,5 @@ class RedisHueyTest(TestCase):
         self.huey.get = get
         tasks = self.huey.heartbeat_manager.get_dead_tasks()
         self.assertEqual(len(tasks), 1)
-        self.assertEqual(tasks[0], self.huey.DeadTask('task-id', 'name', 'settings'))
+        self.assertEqual(tasks[0], self.huey.heartbeat_manager.DeadTask('task-id', 'name', 'settings'))
         self.assertTrue(self.called)
