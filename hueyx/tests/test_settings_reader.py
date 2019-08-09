@@ -1,9 +1,7 @@
-from typing import Dict, List
-
 from django.test import TestCase
 from redis import ConnectionPool
 
-from hueyx.settings_reader import SingleConfigReader
+from hueyx.settings_reader import SingleConfigReader, HueyxException
 
 
 class SingleConfigReaderTest(TestCase):
@@ -47,8 +45,8 @@ class SingleConfigReaderTest(TestCase):
 
     def test_extract_none_connection(self):
         reader = SingleConfigReader('queue1', {})
-        pool = reader.connection_pool
-        self.assertIsNone(pool)
+        with self.assertRaises(HueyxException):
+            reader.connection_pool
 
     def test_extract_huey_configuration(self):
         config = {
@@ -68,7 +66,7 @@ class SingleConfigReaderTest(TestCase):
 
     def test_get_huey_instance(self):
         config = {
-            'result_store': False,
+            'results': False,
             'always_eager': False,
             'backend_class': ' huey.RedisHuey',
             'connection': {
@@ -78,6 +76,6 @@ class SingleConfigReaderTest(TestCase):
         reader = SingleConfigReader('queue1', config)
         huey = reader.huey_instance
         self.assertIsNotNone(huey)
-        self.assertEqual(huey.result_store, False)
+        self.assertEqual(huey.results, False)
         self.assertEqual(huey.storage.pool.connection_kwargs['db'], 99)
         self.assertEqual(huey.name, 'queue1')
