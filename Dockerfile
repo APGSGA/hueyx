@@ -6,9 +6,11 @@ COPY requirements.txt $APPDIR
 RUN apk add --no-cache --virtual .build-deps \
 		gcc \
 		libc-dev \
-		linux-headers && \
+		linux-headers \
+		libffi-dev \
+		openssl-dev \
+		python3-dev && \
 	pip install -r /app/requirements.txt &&  \
-	pip install -r /app/requirements_sidecar.txt &&  \
 	apk del .build-deps && \
 	mkdir $APPDIR$prometheus_multiproc_dir
 
