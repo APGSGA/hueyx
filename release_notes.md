@@ -1,5 +1,13 @@
 # Release notes
 
+### 1.0.2
+- Updated for Huey 2.3
+- Use built-in django autodiscover modules method
+- Fixed "docker build"
+
+### 1.0.1
+- Extracted heartbeat methods into HeartBeatManager class
+
 ### 1.0.0
 - Added support for huey 2.0 and its new signal system.
 - Removed `fire_enqueued_events`. By default, hueyx will automatically report metrics to redis.

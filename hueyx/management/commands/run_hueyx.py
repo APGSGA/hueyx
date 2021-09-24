@@ -1,13 +1,11 @@
 import logging
 
-from django.apps import apps as django_apps
 from django.core.management.base import BaseCommand
 from django.utils.module_loading import autodiscover_modules
-
 from huey.consumer_options import ConsumerConfig
+
 from hueyx.consumer import HueyxConsumer
 from hueyx.queues import settings_reader
-
 
 logger = logging.getLogger('huey.consumer')
 
@@ -25,7 +23,6 @@ class Command(BaseCommand):
         parser.add_argument('queue_name', nargs=1, type=str, help='Select the queue to listen on.')
 
     def run_consumer(self, queue_name):
-
         multiple_scheduler_locking = self.consumer_options.pop('multiple_scheduler_locking', False)
 
         HUEY = settings_reader.configurations[queue_name].huey_instance
@@ -44,4 +41,3 @@ class Command(BaseCommand):
 
         autodiscover_modules("tasks")
         self.run_consumer(queue_name)
-

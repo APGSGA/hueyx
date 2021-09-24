@@ -16,7 +16,7 @@ class HueyxScheduler(Scheduler):
     This is done by locking the specific execution time pattern on redis.
     """
 
-    def enqueue_periodic_tasks(self, now, start):
+    def enqueue_periodic_tasks(self, now):
         self._logger.debug('Checking periodic tasks')
         if now is None:
             now = datetime.datetime.now()
