@@ -65,6 +65,18 @@ HUEYX = {
             'worker_type': 'thread',
         }
     },
+    'priority_queue_name3': {
+        'huey_class': 'huey.PriorityRedisHuey',
+        'connection': {
+            'connection_pool': ConnectionPool(host='localhost', port=6379, db=1)
+        },
+        'consumer': {
+            'multiple_scheduler_locking': True,
+            'prometheus_metrics': True,
+            'workers': 2,
+            'worker_type': 'thread',
+        }
+    },
 }
 ```
 
@@ -73,7 +85,7 @@ Have a look at the [huey documentation](https://huey.readthedocs.io/en/latest/co
 to see the exact parameter usage.
 
 Exceptions:
-- You can only configure redis as storage engine.
+- You can only configure redis as storage engine by configure `huey_class` to `huey.RedisHuey`, `huey.PriorityRedisHuey`, `huey.RedisExpireHuey` or `huey.PriorityRedisExpireHuey`.
 - The `name` and `backend_class` parameters are not supported.
 - The options `multiple_scheduler_locking` and `prometheus_metrics_enabled` have been added. See below.
 - The parameters `heartbeat_timeout` for `db_task` has been added. See below.

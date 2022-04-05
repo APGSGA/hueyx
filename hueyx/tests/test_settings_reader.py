@@ -1,6 +1,6 @@
 from django.test import TestCase
 from redis import ConnectionPool
-
+from huey.storage import RedisExpireStorage
 from hueyx.settings_reader import SingleConfigReader, HueyxException
 
 
@@ -76,6 +76,63 @@ class SingleConfigReaderTest(TestCase):
         reader = SingleConfigReader('queue1', config)
         huey = reader.huey_instance
         self.assertIsNotNone(huey)
+        self.assertFalse(huey.storage_class.priority)
         self.assertEqual(huey.results, False)
+        self.assertEqual(huey.storage.pool.connection_kwargs['db'], 99)
+        self.assertEqual(huey.name, 'queue1')
+
+    def test_get_huey_priority_instance(self):
+        config = {
+            'huey_class': 'huey.PriorityRedisHuey',
+            'results': False,
+            'always_eager': False,
+            'backend_class': ' huey.RedisHuey',
+            'connection': {
+                'connection_pool': ConnectionPool(host='localhost', port=6379, db=99)
+            }
+        }
+        reader = SingleConfigReader('queue1', config)
+        huey = reader.huey_instance
+        self.assertIsNotNone(huey)
+        self.assertEqual(huey.results, False)
+        self.assertTrue(huey.storage_class.priority)
+        self.assertEqual(huey.storage.pool.connection_kwargs['db'], 99)
+        self.assertEqual(huey.name, 'queue1')
+
+    def test_get_huey_expiry_instance(self):
+        config = {
+            'huey_class': 'huey.RedisExpireHuey',
+            'results': False,
+            'always_eager': False,
+            'backend_class': ' huey.RedisHuey',
+            'connection': {
+                'connection_pool': ConnectionPool(host='localhost', port=6379, db=99)
+            }
+        }
+        reader = SingleConfigReader('queue1', config)
+        huey = reader.huey_instance
+        self.assertIsNotNone(huey)
+        self.assertEqual(huey.results, False)
+        self.assertFalse(huey.storage_class.priority)
+        self.assertFalse(self.assertFalse(isinstance(huey.storage_class, RedisExpireStorage)))
+        self.assertEqual(huey.storage.pool.connection_kwargs['db'], 99)
+        self.assertEqual(huey.name, 'queue1')
+
+    def test_get_huey_priority_expiry_instance(self):
+        config = {
+            'huey_class': 'huey.PriorityRedisExpireHuey',
+            'results': False,
+            'always_eager': False,
+            'backend_class': ' huey.RedisHuey',
+            'connection': {
+                'connection_pool': ConnectionPool(host='localhost', port=6379, db=99)
+            }
+        }
+        reader = SingleConfigReader('queue1', config)
+        huey = reader.huey_instance
+        self.assertIsNotNone(huey)
+        self.assertEqual(huey.results, False)
+        self.assertTrue(huey.storage_class.priority)
+        self.assertFalse(self.assertFalse(isinstance(huey.storage_class, RedisExpireStorage)))
         self.assertEqual(huey.storage.pool.connection_kwargs['db'], 99)
         self.assertEqual(huey.name, 'queue1')
