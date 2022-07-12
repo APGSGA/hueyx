@@ -1,5 +1,6 @@
 import json
 import os
+from importlib import import_module
 from typing import Dict
 
 from cached_property import cached_property
@@ -15,6 +16,8 @@ class HueyxException(Exception):
 
 
 class SingleConfigReader:
+    default_hueyx_path = 'hueyx.redis_huey'
+
     def __init__(self, name: str, config: Dict):
         self.name = name
         self.config = config
@@ -50,10 +53,20 @@ class SingleConfigReader:
 
     @cached_property
     def huey_instance(self):
-        huey = RedisHuey(self.name, **self.huey_options, global_registry=False, connection_pool=self.connection_pool)
-        if isinstance(huey.storage, RedisStorage) and self.is_signals_enabled:
-            self._connect_signals_to_redis(huey)
-        return huey
+        huey_config = self.huey_options
+        backend_path = huey_config.pop('huey_class', 'huey.RedisHuey')
+
+        try:
+            original_huey_module_path, class_name = backend_path.rsplit('.', 1)
+            module = import_module('hueyx.redis_huey')
+            backend_cls = getattr(module, class_name)
+            huey = backend_cls(self.name, **huey_config, global_registry=False, connection_pool=self.connection_pool)
+            if isinstance(huey.storage, RedisStorage) and self.is_signals_enabled:
+                self._connect_signals_to_redis(huey)
+            return huey
+        except Exception:
+            msg = f'Not supported Huey class: {backend_path}'
+            raise HueyxException(msg)
 
     @cached_property
     def redis(self):
