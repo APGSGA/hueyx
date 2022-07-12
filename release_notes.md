@@ -1,5 +1,9 @@
 # Release notes
 
+### 1.0.3
+- Added support for priority queues
+- Roll HeartBeatManager class back to methods (from 1.0.1)
+
 ### 1.0.2
 - Updated for Huey 2.3
 - Use built-in django autodiscover modules method
